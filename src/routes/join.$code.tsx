@@ -1,0 +1,459 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, PartyPopper, Timer, Trophy, Users } from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { formatMs, MEDAL, toOptions, type BoardRow, type PlayableQuestion } from "@/lib/quiz";
+
+export const Route = createFileRoute("/join/$code")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Join the live quiz — QuizPop" },
+      { name: "description", content: "Enter your name, wait in the lobby and play the live quiz." },
+      { property: "og:title", content: "Join the live quiz — QuizPop" },
+      { property: "og:description", content: "Enter your name and play the live quiz." },
+    ],
+  }),
+  component: JoinPage,
+});
+
+type Quiz = { id: string; title: string; status: "draft" | "lobby" | "live" | "ended" };
+
+const joinSchema = z.object({
+  name: z.string().trim().min(2, "Enter your full name").max(60),
+  phone: z
+    .string()
+    .trim()
+    .min(7, "Enter a valid phone number")
+    .max(20)
+    .regex(/^[0-9+\-\s()]+$/, "Phone can only contain numbers"),
+});
+
+function JoinPage() {
+  const { code } = Route.useParams();
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [participantId, setParticipantId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [joining, setJoining] = useState(false);
+
+  const storageKey = `quizpop:${code}`;
+
+  const loadQuiz = useCallback(async () => {
+    const { data } = await supabase
+      .from("quizzes")
+      .select("id, title, status")
+      .eq("join_code", code.toUpperCase())
+      .maybeSingle();
+    setQuiz(data as Quiz | null);
+    setLoading(false);
+  }, [code]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) setParticipantId(saved);
+    loadQuiz();
+  }, [loadQuiz, storageKey]);
+
+  useEffect(() => {
+    if (!quiz) return;
+    const channel = supabase
+      .channel(`quiz-${quiz.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "quizzes", filter: `id=eq.${quiz.id}` },
+        (payload) => setQuiz(payload.new as Quiz),
+      )
+      .subscribe();
+    const poll = setInterval(loadQuiz, 4000);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
+  }, [quiz?.id, loadQuiz, quiz]);
+
+  const join = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!quiz) return;
+    const parsed = joinSchema.safeParse({ name, phone });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Check your details");
+      return;
+    }
+    setJoining(true);
+    const { data, error } = await supabase
+      .from("participants")
+      .insert({ quiz_id: quiz.id, name: parsed.data.name, phone: parsed.data.phone })
+      .select("id")
+      .single();
+    setJoining(false);
+    if (error || !data) {
+      toast.error("Could not join — the lobby may not be open yet.");
+      return;
+    }
+    localStorage.setItem(storageKey, data.id);
+    setParticipantId(data.id);
+  };
+
+  if (loading) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!quiz) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg px-6">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-2xl font-bold">Quiz not found</h1>
+          <p className="mt-2 text-muted-foreground">
+            Double-check the code <span className="font-bold">{code}</span> with your tutor.
+          </p>
+          <Button asChild className="chunky mt-5 rounded-xl font-bold">
+            <Link to="/">Back home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!participantId) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg px-6 py-12">
+        <div className="pop-in w-full max-w-md surface-card p-8">
+          <p className="text-sm font-bold uppercase tracking-widest text-primary">You're invited</p>
+          <h1 className="mt-2 text-3xl font-bold">{quiz.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Enter your details to take your seat in the lobby.
+          </p>
+          <form onSubmit={join} className="mt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full name</Label>
+              <Input
+                id="name"
+                value={name}
+                maxLength={60}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Chidi Okafor"
+                className="h-12 rounded-xl border-2"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone number</Label>
+              <Input
+                id="phone"
+                inputMode="tel"
+                value={phone}
+                maxLength={20}
+                onChange={(event) => setPhone(event.target.value)}
+                placeholder="080 1234 5678"
+                className="h-12 rounded-xl border-2"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={joining || quiz.status === "draft" || quiz.status === "ended"}
+              className="chunky h-12 w-full rounded-xl text-base font-bold"
+            >
+              {quiz.status === "draft"
+                ? "Waiting for tutor to open the lobby"
+                : quiz.status === "ended"
+                  ? "This quiz has ended"
+                  : joining
+                    ? "Joining…"
+                    : "Enter the lobby"}
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (quiz.status === "lobby" || quiz.status === "draft") {
+    return <Lobby quiz={quiz} />;
+  }
+
+  return <Play quiz={quiz} participantId={participantId} />;
+}
+
+function Lobby({ quiz }: { quiz: Quiz }) {
+  const [board, setBoard] = useState<BoardRow[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.rpc("get_quiz_board", { _quiz_id: quiz.id });
+      setBoard((data ?? []) as BoardRow[]);
+    };
+    load();
+    const timer = setInterval(load, 3000);
+    return () => clearInterval(timer);
+  }, [quiz.id]);
+
+  return (
+    <div className="grid min-h-screen place-items-center confetti-bg px-6 py-12">
+      <div className="pop-in w-full max-w-xl surface-card p-8 text-center">
+        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1 text-sm font-bold text-secondary-foreground">
+          <Users className="size-4" /> {board.length} in the lobby
+        </span>
+        <h1 className="mt-4 text-3xl font-bold">{quiz.title}</h1>
+        <p className="mt-2 text-muted-foreground">
+          Hang tight — the quiz starts the moment your tutor hits start.
+        </p>
+        <div className="mt-6 flex justify-center gap-2">
+          {[0, 1, 2].map((dot) => (
+            <span
+              key={dot}
+              className="size-3 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: `${dot * 0.15}s` }}
+            />
+          ))}
+        </div>
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          {board.map((person) => (
+            <span
+              key={person.id}
+              className="rounded-full border-2 border-border bg-card px-3 py-1 text-sm font-bold"
+            >
+              {person.name}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
+  const [questions, setQuestions] = useState<PlayableQuestion[] | null>(null);
+  const [index, setIndex] = useState(0);
+  const [answer, setAnswer] = useState("");
+  const [remaining, setRemaining] = useState(0);
+  const [done, setDone] = useState(false);
+  const startedAt = useRef<number>(Date.now());
+  const locked = useRef(false);
+
+  useEffect(() => {
+    supabase.rpc("get_quiz_questions", { _quiz_id: quiz.id }).then(({ data }) => {
+      const rows = (data ?? []).map((row) => ({
+        ...(row as PlayableQuestion),
+        options: toOptions((row as { options: unknown }).options),
+      }));
+      setQuestions(rows as PlayableQuestion[]);
+    });
+  }, [quiz.id]);
+
+  const current = questions?.[index];
+
+  const advance = useCallback(
+    async (response: string) => {
+      if (!current || locked.current) return;
+      locked.current = true;
+      const elapsed = Date.now() - startedAt.current;
+      await supabase.rpc("submit_answer", {
+        _participant_id: participantId,
+        _question_id: current.id,
+        _response: response,
+        _time_ms: Math.min(elapsed, current.time_limit * 1000),
+      });
+      const isLast = index + 1 >= (questions?.length ?? 0);
+      if (isLast) {
+        await supabase.rpc("finish_participant", { _participant_id: participantId });
+        setDone(true);
+      } else {
+        setIndex((value) => value + 1);
+        setAnswer("");
+        startedAt.current = Date.now();
+      }
+      locked.current = false;
+    },
+    [current, index, participantId, questions?.length],
+  );
+
+  useEffect(() => {
+    if (!current || done) return;
+    locked.current = false;
+    startedAt.current = Date.now();
+    setRemaining(current.time_limit);
+    const timer = setInterval(() => {
+      const left = current.time_limit - Math.floor((Date.now() - startedAt.current) / 1000);
+      setRemaining(Math.max(0, left));
+      if (left <= 0) {
+        clearInterval(timer);
+        advance("");
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [current?.id, done, advance, current]);
+
+  if (done || quiz.status === "ended") return <Results quiz={quiz} participantId={participantId} />;
+
+  if (!questions) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!current) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg px-6">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-2xl font-bold">No questions yet</h1>
+          <p className="mt-2 text-muted-foreground">Your tutor hasn't added any questions.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = ((index + 1) / questions.length) * 100;
+
+  return (
+    <div className="min-h-screen confetti-bg px-6 py-10">
+      <div className="pop-in mx-auto w-full max-w-2xl">
+        <div className="flex items-center justify-between text-sm font-bold">
+          <span>
+            Question {index + 1} of {questions.length}
+          </span>
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ${
+              remaining <= 5 ? "bg-destructive text-destructive-foreground" : "bg-secondary text-secondary-foreground"
+            }`}
+          >
+            <Timer className="size-4" /> {remaining}s
+          </span>
+        </div>
+        <div className="mt-3 h-3 w-full overflow-hidden rounded-full border-2 border-border bg-card">
+          <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+        </div>
+
+        <div className="mt-6 surface-card p-8">
+          <h1 className="text-2xl font-bold leading-snug">{current.prompt}</h1>
+
+          {current.type === "multiple_choice" && (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {current.options
+                .filter((option) => option.trim().length > 0)
+                .map((option) => (
+                  <Button
+                    key={option}
+                    onClick={() => advance(option)}
+                    variant="outline"
+                    className="chunky h-auto min-h-14 whitespace-normal rounded-xl border-2 py-3 text-base font-bold"
+                  >
+                    {option}
+                  </Button>
+                ))}
+            </div>
+          )}
+
+          {current.type === "true_false" && (
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {["True", "False"].map((option) => (
+                <Button
+                  key={option}
+                  onClick={() => advance(option)}
+                  variant="outline"
+                  className="chunky h-16 rounded-xl border-2 text-lg font-bold"
+                >
+                  {option}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {current.type === "short_answer" && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!answer.trim()) return;
+                advance(answer);
+              }}
+              className="mt-6 space-y-3"
+            >
+              <Input
+                value={answer}
+                maxLength={120}
+                autoFocus
+                onChange={(event) => setAnswer(event.target.value)}
+                placeholder="Type your answer…"
+                className="h-14 rounded-xl border-2 text-lg"
+              />
+              <Button type="submit" className="chunky h-12 w-full rounded-xl text-base font-bold">
+                Submit answer
+              </Button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Results({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
+  const [board, setBoard] = useState<BoardRow[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.rpc("get_quiz_board", { _quiz_id: quiz.id });
+      setBoard((data ?? []) as BoardRow[]);
+    };
+    load();
+    const timer = setInterval(load, 5000);
+    return () => clearInterval(timer);
+  }, [quiz.id]);
+
+  const me = useMemo(() => board.find((row) => row.id === participantId), [board, participantId]);
+  const rank = board.findIndex((row) => row.id === participantId) + 1;
+
+  return (
+    <div className="min-h-screen confetti-bg px-6 py-12">
+      <div className="pop-in mx-auto w-full max-w-xl">
+        <div className="surface-card p-8 text-center">
+          <PartyPopper className="mx-auto size-10 text-primary" />
+          <h1 className="mt-3 text-3xl font-bold">All done!</h1>
+          {me && (
+            <p className="mt-2 text-muted-foreground">
+              You scored <span className="font-bold text-foreground">{me.score}</span> in{" "}
+              <span className="font-bold text-foreground">{formatMs(me.total_time_ms)}</span> — rank #{rank}.
+            </p>
+          )}
+        </div>
+
+        <h2 className="mt-8 flex items-center gap-2 text-2xl font-bold">
+          <Trophy className="size-6 text-primary" /> Leaderboard
+        </h2>
+        <div className="mt-3 space-y-2">
+          {board.map((row, position) => (
+            <div
+              key={row.id}
+              className={`surface-card flex items-center justify-between px-5 py-3 ${
+                row.id === participantId ? "border-primary" : ""
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="grid size-9 place-items-center rounded-full bg-muted font-display font-bold">
+                  {MEDAL[position] ?? position + 1}
+                </span>
+                <p className="font-bold">{row.name}</p>
+              </div>
+              <div className="flex items-center gap-4 text-sm font-bold">
+                <span className="text-primary">{row.score}</span>
+                <span className="text-muted-foreground">{formatMs(row.total_time_ms)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
