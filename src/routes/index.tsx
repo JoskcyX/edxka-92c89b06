@@ -14,11 +14,11 @@ export const Route = createFileRoute("/")({
         content:
           "Tutors build a quiz, share one link, and hit start. Students join a live lobby, answer against the clock, and land on a speed-and-accuracy leaderboard.",
       },
-      { property: "og:title", content: "QuizPop — Live Classroom Quizzes" },
+      { property: "og:title", content: "QuizPop — Live Classroom Quizzes Your Students Race Through" },
       {
         property: "og:description",
         content:
-          "Build a quiz, share one link, hit start. Students race the clock and the leaderboard builds itself.",
+          "Tutors build a quiz, share one link, and hit start. Students join a live lobby, answer against the clock, and land on a speed-and-accuracy leaderboard.",
       },
     ],
   }),
