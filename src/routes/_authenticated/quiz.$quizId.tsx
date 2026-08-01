@@ -101,9 +101,14 @@ function QuizControl() {
 
   const setStatus = useMutation({
     mutationFn: async (status: "draft" | "lobby" | "live" | "ended") => {
-      const patch: Record<string, unknown> = { status };
-      if (status === "live") patch['started_at'] = new Date().toISOString();
-      const { error } = await supabase.from("quizzes").update(patch).eq("id", quizId);
+      const { error } = await supabase
+        .from("quizzes")
+        .update(
+          status === "live"
+            ? { status, started_at: new Date().toISOString() }
+            : { status },
+        )
+        .eq("id", quizId);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["quiz", quizId] }),
