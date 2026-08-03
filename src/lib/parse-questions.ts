@@ -5,7 +5,7 @@ export type ParsedQuestion = {
   type: QuestionType;
   options: string[];
   correct_answer: string;
-  warning?: string;
+  warning?: string | undefined;
 };
 
 const OPTION_LETTERS = "ABCDEFGH";
