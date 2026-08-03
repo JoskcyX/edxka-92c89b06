@@ -384,60 +384,78 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
         <div className="mt-6 surface-card p-8">
           <h1 className="text-2xl font-bold leading-snug">{current.prompt}</h1>
 
-          {current.type === "multiple_choice" && (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {current.options
-                .filter((option) => option.trim().length > 0)
-                .map((option) => (
-                  <Button
-                    key={option}
-                    onClick={() => advance(option)}
-                    variant="outline"
-                    className="chunky h-auto min-h-14 whitespace-normal rounded-xl border-2 py-3 text-base font-bold"
-                  >
-                    {option}
-                  </Button>
-                ))}
+          {submitted ? (
+            <div className="mt-6 rounded-xl border-2 border-border bg-muted/40 p-6 text-center">
+              <Loader2 className="mx-auto size-6 animate-spin text-primary" />
+              <p className="mt-3 font-bold">Answer locked in!</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {waiting.total > 0
+                  ? `Waiting for the others — ${waiting.answered} of ${waiting.total} answered.`
+                  : "Waiting for the others…"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                We move on as soon as everyone has answered.
+              </p>
             </div>
-          )}
+          ) : (
+            <>
+              {current.type === "multiple_choice" && (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {current.options
+                    .filter((option) => option.trim().length > 0)
+                    .map((option) => (
+                      <Button
+                        key={option}
+                        onClick={() => submit(option)}
+                        variant="outline"
+                        className="chunky h-auto min-h-14 whitespace-normal rounded-xl border-2 py-3 text-base font-bold"
+                      >
+                        {option}
+                      </Button>
+                    ))}
+                </div>
+              )}
 
-          {current.type === "true_false" && (
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              {["True", "False"].map((option) => (
-                <Button
-                  key={option}
-                  onClick={() => advance(option)}
-                  variant="outline"
-                  className="chunky h-16 rounded-xl border-2 text-lg font-bold"
+              {current.type === "true_false" && (
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  {["True", "False"].map((option) => (
+                    <Button
+                      key={option}
+                      onClick={() => submit(option)}
+                      variant="outline"
+                      className="chunky h-16 rounded-xl border-2 text-lg font-bold"
+                    >
+                      {option}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              {current.type === "short_answer" && (
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (!answer.trim()) return;
+                    submit(answer);
+                  }}
+                  className="mt-6 space-y-3"
                 >
-                  {option}
-                </Button>
-              ))}
-            </div>
+                  <Input
+                    value={answer}
+                    maxLength={120}
+                    autoFocus
+                    onChange={(event) => setAnswer(event.target.value)}
+                    placeholder="Type your answer…"
+                    className="h-14 rounded-xl border-2 text-lg"
+                  />
+                  <Button type="submit" className="chunky h-12 w-full rounded-xl text-base font-bold">
+                    Submit answer
+                  </Button>
+                </form>
+              )}
+            </>
           )}
 
-          {current.type === "short_answer" && (
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!answer.trim()) return;
-                advance(answer);
-              }}
-              className="mt-6 space-y-3"
-            >
-              <Input
-                value={answer}
-                maxLength={120}
-                autoFocus
-                onChange={(event) => setAnswer(event.target.value)}
-                placeholder="Type your answer…"
-                className="h-14 rounded-xl border-2 text-lg"
-              />
-              <Button type="submit" className="chunky h-12 w-full rounded-xl text-base font-bold">
-                Submit answer
-              </Button>
-            </form>
-          )}
         </div>
       </div>
     </div>
