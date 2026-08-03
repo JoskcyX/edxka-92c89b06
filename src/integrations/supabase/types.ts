@@ -222,6 +222,13 @@ export type Database = {
           type: Database["public"]["Enums"]["question_type"]
         }[]
       }
+      question_progress: {
+        Args: { _question_id: string; _quiz_id: string }
+        Returns: {
+          answered: number
+          total: number
+        }[]
+      }
       submit_answer: {
         Args: {
           _participant_id: string
