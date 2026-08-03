@@ -208,7 +208,10 @@ function QuizControl() {
           </div>
         </section>
 
+        <BulkImport quizId={quizId} startIndex={questions.data?.length ?? 0} />
+
         <section>
+
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">
               Questions{" "}
