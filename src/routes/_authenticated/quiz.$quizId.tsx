@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { BulkImport } from "@/components/BulkImport";
+
 import { formatMs, MEDAL, toOptions, type QuestionType } from "@/lib/quiz";
 
 export const Route = createFileRoute("/_authenticated/quiz/$quizId")({
