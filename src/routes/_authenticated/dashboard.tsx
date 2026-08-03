@@ -12,9 +12,9 @@ import { makeJoinCode } from "@/lib/quiz";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Tutor dashboard — QuizPop" },
+      { title: "Tutor dashboard — EDxKa" },
       { name: "description", content: "Create quizzes, share links and open live sessions." },
-      { property: "og:title", content: "Tutor dashboard — QuizPop" },
+      { property: "og:title", content: "Tutor dashboard — EDxKa" },
       { property: "og:description", content: "Create quizzes and run live sessions." },
     ],
   }),
@@ -77,7 +77,7 @@ function Dashboard() {
     <div className="min-h-screen confetti-bg">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <Link to="/" className="font-display text-2xl font-bold">
-          Quiz<span className="text-primary">Pop</span>
+          ED<span className="text-primary">xKa</span>
         </Link>
         <Button variant="outline" onClick={signOut} className="chunky rounded-full border-2 font-bold">
           <LogOut className="size-4" /> Sign out

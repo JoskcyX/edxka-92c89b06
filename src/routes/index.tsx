@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "QuizPop — Live Classroom Quizzes Your Students Race Through" },
+      { title: "EDxKa — Live Classroom Quizzes Your Students Race Through" },
       {
         name: "description",
         content:
           "Tutors build a quiz, share one link, and hit start. Students join a live lobby, answer against the clock, and land on a speed-and-accuracy leaderboard.",
       },
-      { property: "og:title", content: "QuizPop — Live Classroom Quizzes Your Students Race Through" },
+      { property: "og:title", content: "EDxKa — Live Classroom Quizzes Your Students Race Through" },
       {
         property: "og:description",
         content:
@@ -40,7 +40,7 @@ function Landing() {
     <div className="min-h-screen confetti-bg">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <span className="font-display text-2xl font-bold">
-          Quiz<span className="text-primary">Pop</span>
+          ED<span className="text-primary">xKa</span>
         </span>
         <Button asChild variant="outline" className="chunky rounded-full border-2 font-bold">
           <Link to="/auth">Tutor sign in</Link>
