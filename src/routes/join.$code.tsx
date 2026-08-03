@@ -237,6 +237,8 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [remaining, setRemaining] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  const [waiting, setWaiting] = useState({ answered: 0, total: 0 });
   const [done, setDone] = useState(false);
   const startedAt = useRef<number>(Date.now());
   const locked = useRef(false);
@@ -253,9 +255,23 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
 
   const current = questions?.[index];
 
-  const advance = useCallback(
+  const goNext = useCallback(async () => {
+    const isLast = index + 1 >= (questions?.length ?? 0);
+    if (isLast) {
+      await supabase.rpc("finish_participant", { _participant_id: participantId });
+      setDone(true);
+      return;
+    }
+    setIndex((value) => value + 1);
+    setAnswer("");
+    setSubmitted(false);
+    setWaiting({ answered: 0, total: 0 });
+    startedAt.current = Date.now();
+  }, [index, participantId, questions?.length]);
+
+  const submit = useCallback(
     async (response: string) => {
-      if (!current || locked.current) return;
+      if (!current || locked.current || submitted) return;
       locked.current = true;
       const elapsed = Date.now() - startedAt.current;
       await supabase.rpc("submit_answer", {
@@ -264,35 +280,64 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
         _response: response,
         _time_ms: Math.min(elapsed, current.time_limit * 1000),
       });
-      const isLast = index + 1 >= (questions?.length ?? 0);
-      if (isLast) {
-        await supabase.rpc("finish_participant", { _participant_id: participantId });
-        setDone(true);
-      } else {
-        setIndex((value) => value + 1);
-        setAnswer("");
-        startedAt.current = Date.now();
-      }
+      setSubmitted(true);
       locked.current = false;
     },
-    [current, index, participantId, questions?.length],
+    [current, participantId, submitted],
   );
 
   useEffect(() => {
     if (!current || done) return;
     locked.current = false;
+    setSubmitted(false);
+    setWaiting({ answered: 0, total: 0 });
     startedAt.current = Date.now();
     setRemaining(current.time_limit);
     const timer = setInterval(() => {
       const left = current.time_limit - Math.floor((Date.now() - startedAt.current) / 1000);
       setRemaining(Math.max(0, left));
-      if (left <= 0) {
-        clearInterval(timer);
-        advance("");
-      }
     }, 250);
     return () => clearInterval(timer);
-  }, [current?.id, done, advance, current]);
+  }, [current?.id, done, current]);
+
+  // Time is up: submit whatever we have, then move on.
+  useEffect(() => {
+    if (!current || done || remaining > 0) return;
+    let cancelled = false;
+    (async () => {
+      if (!submitted) await submit("");
+      if (!cancelled) await goNext();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [remaining, current?.id, done, submitted, submit, goNext, current]);
+
+  // Everyone answered early: skip ahead without waiting for the timer.
+  useEffect(() => {
+    if (!current || done || !submitted) return;
+    let stop = false;
+    const check = async () => {
+      const { data } = await supabase.rpc("question_progress", {
+        _quiz_id: quiz.id,
+        _question_id: current.id,
+      });
+      const row = (data as { answered: number; total: number }[] | null)?.[0];
+      if (!row || stop) return;
+      setWaiting(row);
+      if (row.total > 0 && row.answered >= row.total) {
+        stop = true;
+        await goNext();
+      }
+    };
+    check();
+    const poll = setInterval(check, 1500);
+    return () => {
+      stop = true;
+      clearInterval(poll);
+    };
+  }, [submitted, current?.id, done, goNext, quiz.id, current]);
+
 
   if (done || quiz.status === "ended") return <Results quiz={quiz} participantId={participantId} />;
 
