@@ -11,12 +11,12 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Tutor sign in — QuizPop" },
+      { title: "Tutor sign in — EDxKa" },
       {
         name: "description",
-        content: "Sign in or create a QuizPop tutor account to build quizzes and run live sessions.",
+        content: "Sign in or create a EDxKa tutor account to build quizzes and run live sessions.",
       },
-      { property: "og:title", content: "Tutor sign in — QuizPop" },
+      { property: "og:title", content: "Tutor sign in — EDxKa" },
       { property: "og:description", content: "Create quizzes and run live sessions with your class." },
     ],
   }),
@@ -87,7 +87,7 @@ function AuthPage() {
     <div className="grid min-h-screen place-items-center confetti-bg px-6 py-12">
       <div className="pop-in w-full max-w-md surface-card p-8">
         <p className="font-display text-2xl font-bold">
-          Quiz<span className="text-primary">Pop</span>
+          ED<span className="text-primary">xKa</span>
         </p>
         <h1 className="mt-4 text-3xl font-bold">
           {mode === "signin" ? "Welcome back, tutor" : "Create your tutor account"}

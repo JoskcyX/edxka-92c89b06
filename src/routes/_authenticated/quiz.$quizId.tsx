@@ -16,14 +16,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { BulkImport } from "@/components/BulkImport";
+
 import { formatMs, MEDAL, toOptions, type QuestionType } from "@/lib/quiz";
 
 export const Route = createFileRoute("/_authenticated/quiz/$quizId")({
   head: () => ({
     meta: [
-      { title: "Quiz control room — QuizPop" },
+      { title: "Quiz control room — EDxKa" },
       { name: "description", content: "Write questions, share the link and run the live session." },
-      { property: "og:title", content: "Quiz control room — QuizPop" },
+      { property: "og:title", content: "Quiz control room — EDxKa" },
       { property: "og:description", content: "Write questions and run the live session." },
     ],
   }),
@@ -149,7 +151,7 @@ function QuizControl() {
           </Link>
         </Button>
         <span className="font-display text-xl font-bold">
-          Quiz<span className="text-primary">Pop</span>
+          ED<span className="text-primary">xKa</span>
         </span>
       </header>
 
@@ -208,7 +210,10 @@ function QuizControl() {
           </div>
         </section>
 
+        <BulkImport quizId={quizId} startIndex={questions.data?.length ?? 0} />
+
         <section>
+
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">
               Questions{" "}
