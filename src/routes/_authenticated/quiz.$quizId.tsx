@@ -51,7 +51,7 @@ function QuizControl() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quizzes")
-        .select("id, title, join_code, status")
+        .select("id, title, join_code, status, paused, reveal_answers, skip_signal, extend_signal")
         .eq("id", quizId)
         .single();
       if (error) throw error;
