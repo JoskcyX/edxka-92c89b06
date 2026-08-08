@@ -165,8 +165,13 @@ export type Database = {
       quizzes: {
         Row: {
           created_at: string
+          extend_seconds: number
+          extend_signal: number
           id: string
           join_code: string
+          paused: boolean
+          reveal_answers: boolean
+          skip_signal: number
           started_at: string | null
           status: Database["public"]["Enums"]["quiz_status"]
           title: string
@@ -174,8 +179,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extend_seconds?: number
+          extend_signal?: number
           id?: string
           join_code: string
+          paused?: boolean
+          reveal_answers?: boolean
+          skip_signal?: number
           started_at?: string | null
           status?: Database["public"]["Enums"]["quiz_status"]
           title?: string
@@ -183,8 +193,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extend_seconds?: number
+          extend_signal?: number
           id?: string
           join_code?: string
+          paused?: boolean
+          reveal_answers?: boolean
+          skip_signal?: number
           started_at?: string | null
           status?: Database["public"]["Enums"]["quiz_status"]
           title?: string
@@ -201,6 +216,7 @@ export type Database = {
         Args: { _participant_id: string }
         Returns: undefined
       }
+      get_answer_key: { Args: { _question_id: string }; Returns: string }
       get_quiz_board: {
         Args: { _quiz_id: string }
         Returns: {
@@ -222,11 +238,25 @@ export type Database = {
           type: Database["public"]["Enums"]["question_type"]
         }[]
       }
+      participant_alive: { Args: { _participant_id: string }; Returns: boolean }
       question_progress: {
         Args: { _question_id: string; _quiz_id: string }
         Returns: {
           answered: number
           total: number
+        }[]
+      }
+      question_stats: {
+        Args: { _quiz_id: string }
+        Returns: {
+          accuracy: number
+          answered: number
+          avg_time_ms: number
+          correct: number
+          correct_answer: string
+          order_index: number
+          prompt: string
+          question_id: string
         }[]
       }
       submit_answer: {
@@ -237,6 +267,18 @@ export type Database = {
           _time_ms: number
         }
         Returns: boolean
+      }
+      tutor_student_progress: {
+        Args: never
+        Returns: {
+          avg_score: number
+          avg_time_ms: number
+          last_played: string
+          name: string
+          phone: string
+          sessions: number
+          total_score: number
+        }[]
       }
     }
     Enums: {
