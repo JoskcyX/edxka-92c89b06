@@ -208,6 +208,21 @@ function QuizControl() {
               </div>
             </div>
           </div>
+          {quiz.data && (
+            <div className="mt-4">
+              <HostControls
+                quizId={quizId}
+                quiz={{
+                  paused: quiz.data.paused,
+                  reveal_answers: quiz.data.reveal_answers,
+                  skip_signal: quiz.data.skip_signal,
+                  extend_signal: quiz.data.extend_signal,
+                  status: quiz.data.status,
+                }}
+                onChanged={() => queryClient.invalidateQueries({ queryKey: ["quiz", quizId] })}
+              />
+            </div>
+          )}
         </section>
 
         <BulkImport quizId={quizId} startIndex={questions.data?.length ?? 0} />
