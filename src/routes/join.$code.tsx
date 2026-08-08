@@ -58,7 +58,7 @@ function JoinPage() {
   const loadQuiz = useCallback(async () => {
     const { data } = await supabase
       .from("quizzes")
-      .select("id, title, status")
+      .select("id, title, status, paused, reveal_answers, skip_signal, extend_signal, extend_seconds")
       .eq("join_code", code.toUpperCase())
       .maybeSingle();
     setQuiz(data as Quiz | null);
