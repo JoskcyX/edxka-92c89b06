@@ -131,6 +131,22 @@ function JoinPage() {
     setParticipantId(data.id);
   };
 
+  if (kicked) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg px-6">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-2xl font-bold">You've been removed</h1>
+          <p className="mt-2 text-muted-foreground">
+            Your tutor removed you from this session. Ask them for a new link if this was a mistake.
+          </p>
+          <Button asChild className="chunky mt-5 rounded-xl font-bold">
+            <Link to="/">Back home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="grid min-h-screen place-items-center confetti-bg">
