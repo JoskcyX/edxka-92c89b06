@@ -25,7 +25,16 @@ export function HostControls({
   const [busy, setBusy] = useState(false);
   const live = quiz.status === "live";
 
-  const patch = async (values: Record<string, unknown>, message: string) => {
+  const patch = async (
+    values: Partial<{
+      paused: boolean;
+      reveal_answers: boolean;
+      skip_signal: number;
+      extend_signal: number;
+      extend_seconds: number;
+    }>,
+    message: string,
+  ) => {
     setBusy(true);
     const { error } = await supabase.from("quizzes").update(values).eq("id", quizId);
     setBusy(false);
