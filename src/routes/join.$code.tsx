@@ -475,24 +475,53 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
           </span>
           <span
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ${
-              remaining <= 5 ? "bg-destructive text-destructive-foreground" : "bg-secondary text-secondary-foreground"
+              quiz.paused
+                ? "bg-muted text-muted-foreground"
+                : remaining <= 5
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-secondary text-secondary-foreground"
             }`}
           >
-            <Timer className="size-4" /> {remaining}s
+            <Timer className="size-4" /> {quiz.paused ? "Paused" : `${remaining}s`}
           </span>
         </div>
         <div className="mt-3 h-3 w-full overflow-hidden rounded-full border-2 border-border bg-card">
           <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
         </div>
 
+        {quiz.paused && (
+          <div className="mt-4 rounded-xl border-2 border-dashed border-border bg-card p-4 text-center font-bold">
+            Your tutor paused the quiz — hang tight.
+          </div>
+        )}
+
         <div className="mt-6 surface-card p-8">
           <h1 className="text-2xl font-bold leading-snug">{current.prompt}</h1>
 
           {submitted ? (
             <div className="mt-6 rounded-xl border-2 border-border bg-muted/40 p-6 text-center">
-              <Loader2 className="mx-auto size-6 animate-spin text-primary" />
-              <p className="mt-3 font-bold">Answer locked in!</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              {quiz.reveal_answers && wasCorrect !== null ? (
+                <>
+                  <p
+                    className={`font-display text-2xl font-bold ${
+                      wasCorrect ? "text-secondary" : "text-destructive"
+                    }`}
+                  >
+                    {wasCorrect ? "Correct!" : "Not quite"}
+                  </p>
+                  {answerKey && (
+                    <p className="mt-1 text-sm font-bold">
+                      Answer: <span className="text-primary">{answerKey}</span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Loader2 className="mx-auto size-6 animate-spin text-primary" />
+                  <p className="mt-3 font-bold">Answer locked in!</p>
+                </>
+              )}
+              <p className="mt-2 text-sm text-muted-foreground">
                 {waiting.total > 0
                   ? `Waiting for the others — ${waiting.answered} of ${waiting.total} answered.`
                   : "Waiting for the others…"}
