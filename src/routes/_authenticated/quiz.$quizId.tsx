@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { BulkImport } from "@/components/BulkImport";
+import { HostControls } from "@/components/HostControls";
+import { QuizAnalytics } from "@/components/QuizAnalytics";
 
 import { formatMs, MEDAL, toOptions, type QuestionType } from "@/lib/quiz";
 
