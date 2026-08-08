@@ -23,7 +23,16 @@ export const Route = createFileRoute("/join/$code")({
   component: JoinPage,
 });
 
-type Quiz = { id: string; title: string; status: "draft" | "lobby" | "live" | "ended" };
+type Quiz = {
+  id: string;
+  title: string;
+  status: "draft" | "lobby" | "live" | "ended";
+  paused: boolean;
+  reveal_answers: boolean;
+  skip_signal: number;
+  extend_signal: number;
+  extend_seconds: number;
+};
 
 const joinSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name").max(60),
