@@ -23,7 +23,16 @@ export const Route = createFileRoute("/join/$code")({
   component: JoinPage,
 });
 
-type Quiz = { id: string; title: string; status: "draft" | "lobby" | "live" | "ended" };
+type Quiz = {
+  id: string;
+  title: string;
+  status: "draft" | "lobby" | "live" | "ended";
+  paused: boolean;
+  reveal_answers: boolean;
+  skip_signal: number;
+  extend_signal: number;
+  extend_seconds: number;
+};
 
 const joinSchema = z.object({
   name: z.string().trim().min(2, "Enter your full name").max(60),
@@ -43,13 +52,14 @@ function JoinPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [joining, setJoining] = useState(false);
+  const [kicked, setKicked] = useState(false);
 
   const storageKey = `quizpop:${code}`;
 
   const loadQuiz = useCallback(async () => {
     const { data } = await supabase
       .from("quizzes")
-      .select("id, title, status")
+      .select("id, title, status, paused, reveal_answers, skip_signal, extend_signal, extend_seconds")
       .eq("join_code", code.toUpperCase())
       .maybeSingle();
     setQuiz(data as Quiz | null);
@@ -72,12 +82,31 @@ function JoinPage() {
         (payload) => setQuiz(payload.new as Quiz),
       )
       .subscribe();
-    const poll = setInterval(loadQuiz, 4000);
+    const poll = setInterval(loadQuiz, 1500);
     return () => {
       supabase.removeChannel(channel);
       clearInterval(poll);
     };
   }, [quiz?.id, loadQuiz, quiz]);
+
+  // The tutor can remove a student mid-session.
+  useEffect(() => {
+    if (!participantId) return;
+    const check = async () => {
+      const { data, error } = await supabase.rpc("participant_alive", {
+        _participant_id: participantId,
+      });
+      if (!error && data === false) {
+        localStorage.removeItem(storageKey);
+        setKicked(true);
+      }
+    };
+    check();
+    const timer = setInterval(check, 5000);
+    return () => clearInterval(timer);
+  }, [participantId, storageKey]);
+
+
 
   const join = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -101,6 +130,22 @@ function JoinPage() {
     localStorage.setItem(storageKey, data.id);
     setParticipantId(data.id);
   };
+
+  if (kicked) {
+    return (
+      <div className="grid min-h-screen place-items-center confetti-bg px-6">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-2xl font-bold">You've been removed</h1>
+          <p className="mt-2 text-muted-foreground">
+            Your tutor removed you from this session. Ask them for a new link if this was a mistake.
+          </p>
+          <Button asChild className="chunky mt-5 rounded-xl font-bold">
+            <Link to="/">Back home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -238,9 +283,15 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
   const [answer, setAnswer] = useState("");
   const [remaining, setRemaining] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
+  const [answerKey, setAnswerKey] = useState<string | null>(null);
   const [waiting, setWaiting] = useState({ answered: 0, total: 0 });
   const [done, setDone] = useState(false);
   const startedAt = useRef<number>(Date.now());
+  const deadline = useRef<number>(Date.now());
+  const pausedAt = useRef<number | null>(null);
+  const lastSkip = useRef<number>(quiz.skip_signal);
+  const lastExtend = useRef<number>(quiz.extend_signal);
   const locked = useRef(false);
 
   useEffect(() => {
@@ -265,44 +316,82 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
     setIndex((value) => value + 1);
     setAnswer("");
     setSubmitted(false);
+    setWasCorrect(null);
+    setAnswerKey(null);
     setWaiting({ answered: 0, total: 0 });
     startedAt.current = Date.now();
   }, [index, participantId, questions?.length]);
 
   const submit = useCallback(
     async (response: string) => {
-      if (!current || locked.current || submitted) return;
+      if (!current || locked.current || submitted || quiz.paused) return;
       locked.current = true;
-      const elapsed = Date.now() - startedAt.current;
-      await supabase.rpc("submit_answer", {
+      const elapsed = Math.max(0, Date.now() - startedAt.current);
+      const { data } = await supabase.rpc("submit_answer", {
         _participant_id: participantId,
         _question_id: current.id,
         _response: response,
-        _time_ms: Math.min(elapsed, current.time_limit * 1000),
+        _time_ms: elapsed,
       });
       setSubmitted(true);
+      setWasCorrect(Boolean(data));
       locked.current = false;
+      if (quiz.reveal_answers) {
+        const { data: key } = await supabase.rpc("get_answer_key", { _question_id: current.id });
+        if (typeof key === "string") setAnswerKey(key);
+      }
     },
-    [current, participantId, submitted],
+    [current, participantId, submitted, quiz.reveal_answers, quiz.paused],
   );
 
+  // New question: reset the clock and start ticking.
   useEffect(() => {
     if (!current || done) return;
     locked.current = false;
     setSubmitted(false);
+    setWasCorrect(null);
+    setAnswerKey(null);
     setWaiting({ answered: 0, total: 0 });
     startedAt.current = Date.now();
+    deadline.current = Date.now() + current.time_limit * 1000;
+    pausedAt.current = null;
     setRemaining(current.time_limit);
     const timer = setInterval(() => {
-      const left = current.time_limit - Math.floor((Date.now() - startedAt.current) / 1000);
-      setRemaining(Math.max(0, left));
+      if (pausedAt.current !== null) return;
+      setRemaining(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000)));
     }, 250);
     return () => clearInterval(timer);
   }, [current?.id, done, current]);
 
-  // Time is up: submit whatever we have, then move on.
+  // Host pressed pause / resume: freeze and thaw the clock for everyone.
   useEffect(() => {
-    if (!current || done || remaining > 0) return;
+    if (quiz.paused) {
+      if (pausedAt.current === null) pausedAt.current = Date.now();
+      return;
+    }
+    if (pausedAt.current !== null) {
+      const frozen = Date.now() - pausedAt.current;
+      deadline.current += frozen;
+      startedAt.current += frozen;
+      pausedAt.current = null;
+    }
+  }, [quiz.paused]);
+
+  // Host added extra seconds to the current question.
+  useEffect(() => {
+    if (quiz.extend_signal === lastExtend.current) return;
+    lastExtend.current = quiz.extend_signal;
+    if (quiz.extend_seconds > 0) {
+      deadline.current += quiz.extend_seconds * 1000;
+      setRemaining(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000)));
+      toast.info(`Your tutor added ${quiz.extend_seconds} seconds`);
+    }
+  }, [quiz.extend_signal, quiz.extend_seconds]);
+
+  // Host skipped the question.
+  useEffect(() => {
+    if (quiz.skip_signal === lastSkip.current || done || !current) return;
+    lastSkip.current = quiz.skip_signal;
     let cancelled = false;
     (async () => {
       if (!submitted) await submit("");
@@ -311,11 +400,24 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [remaining, current?.id, done, submitted, submit, goNext, current]);
+  }, [quiz.skip_signal, done, current, submitted, submit, goNext]);
+
+  // Time is up: submit whatever we have, then move on.
+  useEffect(() => {
+    if (!current || done || remaining > 0 || quiz.paused) return;
+    let cancelled = false;
+    (async () => {
+      if (!submitted) await submit("");
+      if (!cancelled) await goNext();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [remaining, current?.id, done, submitted, submit, goNext, current, quiz.paused]);
 
   // Everyone answered early: skip ahead without waiting for the timer.
   useEffect(() => {
-    if (!current || done || !submitted) return;
+    if (!current || done || !submitted || quiz.paused) return;
     let stop = false;
     const check = async () => {
       const { data } = await supabase.rpc("question_progress", {
@@ -336,7 +438,9 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
       stop = true;
       clearInterval(poll);
     };
-  }, [submitted, current?.id, done, goNext, quiz.id, current]);
+  }, [submitted, current?.id, done, goNext, quiz.id, current, quiz.paused]);
+
+
 
 
   if (done || quiz.status === "ended") return <Results quiz={quiz} participantId={participantId} />;
@@ -371,24 +475,53 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
           </span>
           <span
             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ${
-              remaining <= 5 ? "bg-destructive text-destructive-foreground" : "bg-secondary text-secondary-foreground"
+              quiz.paused
+                ? "bg-muted text-muted-foreground"
+                : remaining <= 5
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-secondary text-secondary-foreground"
             }`}
           >
-            <Timer className="size-4" /> {remaining}s
+            <Timer className="size-4" /> {quiz.paused ? "Paused" : `${remaining}s`}
           </span>
         </div>
         <div className="mt-3 h-3 w-full overflow-hidden rounded-full border-2 border-border bg-card">
           <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
         </div>
 
+        {quiz.paused && (
+          <div className="mt-4 rounded-xl border-2 border-dashed border-border bg-card p-4 text-center font-bold">
+            Your tutor paused the quiz — hang tight.
+          </div>
+        )}
+
         <div className="mt-6 surface-card p-8">
           <h1 className="text-2xl font-bold leading-snug">{current.prompt}</h1>
 
           {submitted ? (
             <div className="mt-6 rounded-xl border-2 border-border bg-muted/40 p-6 text-center">
-              <Loader2 className="mx-auto size-6 animate-spin text-primary" />
-              <p className="mt-3 font-bold">Answer locked in!</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              {quiz.reveal_answers && wasCorrect !== null ? (
+                <>
+                  <p
+                    className={`font-display text-2xl font-bold ${
+                      wasCorrect ? "text-secondary" : "text-destructive"
+                    }`}
+                  >
+                    {wasCorrect ? "Correct!" : "Not quite"}
+                  </p>
+                  {answerKey && (
+                    <p className="mt-1 text-sm font-bold">
+                      Answer: <span className="text-primary">{answerKey}</span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Loader2 className="mx-auto size-6 animate-spin text-primary" />
+                  <p className="mt-3 font-bold">Answer locked in!</p>
+                </>
+              )}
+              <p className="mt-2 text-sm text-muted-foreground">
                 {waiting.total > 0
                   ? `Waiting for the others — ${waiting.answered} of ${waiting.total} answered.`
                   : "Waiting for the others…"}

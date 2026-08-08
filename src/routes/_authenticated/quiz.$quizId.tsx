@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, Play, Plus, Square, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Copy, Play, Plus, Square, Trash2, UserX, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { BulkImport } from "@/components/BulkImport";
+import { HostControls } from "@/components/HostControls";
+import { QuizAnalytics } from "@/components/QuizAnalytics";
 
 import { formatMs, MEDAL, toOptions, type QuestionType } from "@/lib/quiz";
 
@@ -51,7 +53,7 @@ function QuizControl() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quizzes")
-        .select("id, title, join_code, status")
+        .select("id, title, join_code, status, paused, reveal_answers, skip_signal, extend_signal")
         .eq("id", quizId)
         .single();
       if (error) throw error;
@@ -208,6 +210,21 @@ function QuizControl() {
               </div>
             </div>
           </div>
+          {quiz.data && (
+            <div className="mt-4">
+              <HostControls
+                quizId={quizId}
+                quiz={{
+                  paused: quiz.data.paused,
+                  reveal_answers: quiz.data.reveal_answers,
+                  skip_signal: quiz.data.skip_signal,
+                  extend_signal: quiz.data.extend_signal,
+                  status: quiz.data.status,
+                }}
+                onChanged={() => queryClient.invalidateQueries({ queryKey: ["quiz", quizId] })}
+              />
+            </div>
+          )}
         </section>
 
         <BulkImport quizId={quizId} startIndex={questions.data?.length ?? 0} />
@@ -272,11 +289,31 @@ function QuizControl() {
                   >
                     {person.finished_at ? "Done" : "Playing"}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove ${person.name}`}
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from("participants")
+                        .delete()
+                        .eq("id", person.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success(`${person.name} removed`);
+                        queryClient.invalidateQueries({ queryKey: ["participants", quizId] });
+                      }
+                    }}
+                  >
+                    <UserX className="size-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        <QuizAnalytics quizId={quizId} title={quiz.data?.title ?? "quiz"} participants={participants.data ?? []} />
       </main>
     </div>
   );

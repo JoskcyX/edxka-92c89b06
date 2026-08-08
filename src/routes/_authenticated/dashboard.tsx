@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { makeJoinCode } from "@/lib/quiz";
+import { StudentProgress } from "@/components/StudentProgress";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -154,6 +155,10 @@ function Dashboard() {
               </span>
             </Link>
           ))}
+        </div>
+
+        <div className="mt-12">
+          <StudentProgress />
         </div>
       </main>
     </div>
