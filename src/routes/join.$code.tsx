@@ -52,6 +52,7 @@ function JoinPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [joining, setJoining] = useState(false);
+  const [kicked, setKicked] = useState(false);
 
   const storageKey = `quizpop:${code}`;
 
