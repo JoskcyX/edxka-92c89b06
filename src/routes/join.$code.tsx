@@ -82,12 +82,31 @@ function JoinPage() {
         (payload) => setQuiz(payload.new as Quiz),
       )
       .subscribe();
-    const poll = setInterval(loadQuiz, 4000);
+    const poll = setInterval(loadQuiz, 1500);
     return () => {
       supabase.removeChannel(channel);
       clearInterval(poll);
     };
   }, [quiz?.id, loadQuiz, quiz]);
+
+  // The tutor can remove a student mid-session.
+  useEffect(() => {
+    if (!participantId) return;
+    const check = async () => {
+      const { data, error } = await supabase.rpc("participant_alive", {
+        _participant_id: participantId,
+      });
+      if (!error && data === false) {
+        localStorage.removeItem(storageKey);
+        setKicked(true);
+      }
+    };
+    check();
+    const timer = setInterval(check, 5000);
+    return () => clearInterval(timer);
+  }, [participantId, storageKey]);
+
+
 
   const join = async (event: React.FormEvent) => {
     event.preventDefault();
