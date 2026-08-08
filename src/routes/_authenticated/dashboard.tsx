@@ -155,6 +155,10 @@ function Dashboard() {
             </Link>
           ))}
         </div>
+
+        <div className="mt-12">
+          <StudentProgress />
+        </div>
       </main>
     </div>
   );
