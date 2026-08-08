@@ -283,9 +283,15 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
   const [answer, setAnswer] = useState("");
   const [remaining, setRemaining] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [wasCorrect, setWasCorrect] = useState<boolean | null>(null);
+  const [answerKey, setAnswerKey] = useState<string | null>(null);
   const [waiting, setWaiting] = useState({ answered: 0, total: 0 });
   const [done, setDone] = useState(false);
   const startedAt = useRef<number>(Date.now());
+  const deadline = useRef<number>(Date.now());
+  const pausedAt = useRef<number | null>(null);
+  const lastSkip = useRef<number>(quiz.skip_signal);
+  const lastExtend = useRef<number>(quiz.extend_signal);
   const locked = useRef(false);
 
   useEffect(() => {
@@ -310,6 +316,8 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
     setIndex((value) => value + 1);
     setAnswer("");
     setSubmitted(false);
+    setWasCorrect(null);
+    setAnswerKey(null);
     setWaiting({ answered: 0, total: 0 });
     startedAt.current = Date.now();
   }, [index, participantId, questions?.length]);
@@ -318,36 +326,72 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
     async (response: string) => {
       if (!current || locked.current || submitted) return;
       locked.current = true;
-      const elapsed = Date.now() - startedAt.current;
-      await supabase.rpc("submit_answer", {
+      const elapsed = Math.max(0, Date.now() - startedAt.current);
+      const { data } = await supabase.rpc("submit_answer", {
         _participant_id: participantId,
         _question_id: current.id,
         _response: response,
-        _time_ms: Math.min(elapsed, current.time_limit * 1000),
+        _time_ms: elapsed,
       });
       setSubmitted(true);
+      setWasCorrect(Boolean(data));
       locked.current = false;
+      if (quiz.reveal_answers) {
+        const { data: key } = await supabase.rpc("get_answer_key", { _question_id: current.id });
+        if (typeof key === "string") setAnswerKey(key);
+      }
     },
-    [current, participantId, submitted],
+    [current, participantId, submitted, quiz.reveal_answers],
   );
 
+  // New question: reset the clock and start ticking.
   useEffect(() => {
     if (!current || done) return;
     locked.current = false;
     setSubmitted(false);
+    setWasCorrect(null);
+    setAnswerKey(null);
     setWaiting({ answered: 0, total: 0 });
     startedAt.current = Date.now();
+    deadline.current = Date.now() + current.time_limit * 1000;
+    pausedAt.current = null;
     setRemaining(current.time_limit);
     const timer = setInterval(() => {
-      const left = current.time_limit - Math.floor((Date.now() - startedAt.current) / 1000);
-      setRemaining(Math.max(0, left));
+      if (pausedAt.current !== null) return;
+      setRemaining(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000)));
     }, 250);
     return () => clearInterval(timer);
   }, [current?.id, done, current]);
 
-  // Time is up: submit whatever we have, then move on.
+  // Host pressed pause / resume: freeze and thaw the clock for everyone.
   useEffect(() => {
-    if (!current || done || remaining > 0) return;
+    if (quiz.paused) {
+      if (pausedAt.current === null) pausedAt.current = Date.now();
+      return;
+    }
+    if (pausedAt.current !== null) {
+      const frozen = Date.now() - pausedAt.current;
+      deadline.current += frozen;
+      startedAt.current += frozen;
+      pausedAt.current = null;
+    }
+  }, [quiz.paused]);
+
+  // Host added extra seconds to the current question.
+  useEffect(() => {
+    if (quiz.extend_signal === lastExtend.current) return;
+    lastExtend.current = quiz.extend_signal;
+    if (quiz.extend_seconds > 0) {
+      deadline.current += quiz.extend_seconds * 1000;
+      setRemaining(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000)));
+      toast.info(`Your tutor added ${quiz.extend_seconds} seconds`);
+    }
+  }, [quiz.extend_signal, quiz.extend_seconds]);
+
+  // Host skipped the question.
+  useEffect(() => {
+    if (quiz.skip_signal === lastSkip.current || done || !current) return;
+    lastSkip.current = quiz.skip_signal;
     let cancelled = false;
     (async () => {
       if (!submitted) await submit("");
@@ -356,11 +400,24 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [remaining, current?.id, done, submitted, submit, goNext, current]);
+  }, [quiz.skip_signal, done, current, submitted, submit, goNext]);
+
+  // Time is up: submit whatever we have, then move on.
+  useEffect(() => {
+    if (!current || done || remaining > 0 || quiz.paused) return;
+    let cancelled = false;
+    (async () => {
+      if (!submitted) await submit("");
+      if (!cancelled) await goNext();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [remaining, current?.id, done, submitted, submit, goNext, current, quiz.paused]);
 
   // Everyone answered early: skip ahead without waiting for the timer.
   useEffect(() => {
-    if (!current || done || !submitted) return;
+    if (!current || done || !submitted || quiz.paused) return;
     let stop = false;
     const check = async () => {
       const { data } = await supabase.rpc("question_progress", {
@@ -381,7 +438,9 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
       stop = true;
       clearInterval(poll);
     };
-  }, [submitted, current?.id, done, goNext, quiz.id, current]);
+  }, [submitted, current?.id, done, goNext, quiz.id, current, quiz.paused]);
+
+
 
 
   if (done || quiz.status === "ended") return <Results quiz={quiz} participantId={participantId} />;
