@@ -324,7 +324,7 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
 
   const submit = useCallback(
     async (response: string) => {
-      if (!current || locked.current || submitted) return;
+      if (!current || locked.current || submitted || quiz.paused) return;
       locked.current = true;
       const elapsed = Math.max(0, Date.now() - startedAt.current);
       const { data } = await supabase.rpc("submit_answer", {
