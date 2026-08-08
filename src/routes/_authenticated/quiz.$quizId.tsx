@@ -287,11 +287,31 @@ function QuizControl() {
                   >
                     {person.finished_at ? "Done" : "Playing"}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Remove ${person.name}`}
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from("participants")
+                        .delete()
+                        .eq("id", person.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success(`${person.name} removed`);
+                        queryClient.invalidateQueries({ queryKey: ["participants", quizId] });
+                      }
+                    }}
+                  >
+                    <UserX className="size-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </section>
+
+        <QuizAnalytics quizId={quizId} title={quiz.data?.title ?? "quiz"} participants={participants.data ?? []} />
       </main>
     </div>
   );
