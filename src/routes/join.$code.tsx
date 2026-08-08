@@ -341,7 +341,7 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
         if (typeof key === "string") setAnswerKey(key);
       }
     },
-    [current, participantId, submitted, quiz.reveal_answers],
+    [current, participantId, submitted, quiz.reveal_answers, quiz.paused],
   );
 
   // New question: reset the clock and start ticking.
