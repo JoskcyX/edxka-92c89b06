@@ -13,7 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedMyCoursesRouteImport } from './routes/_authenticated/my-courses'
+import { Route as CoursesIndexRouteImport } from './routes/courses.index'
+import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
+import { Route as AuthenticatedCourseCourseIdRouteImport } from './routes/_authenticated/course.$courseId'
 import { Route as AuthenticatedQuizQuizIdRouteImport } from './routes/_authenticated/quiz.$quizId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,11 +39,32 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMyCoursesRoute = AuthenticatedMyCoursesRouteImport.update({
+  id: '/my-courses',
+  path: '/my-courses',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const CoursesIndexRoute = CoursesIndexRouteImport.update({
+  id: '/courses/',
+  path: '/courses/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesSlugRoute = CoursesSlugRouteImport.update({
+  id: '/courses/$slug',
+  path: '/courses/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
   id: '/join/$code',
   path: '/join/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCourseCourseIdRoute =
+  AuthenticatedCourseCourseIdRouteImport.update({
+    id: '/course/$courseId',
+    path: '/course/$courseId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedQuizQuizIdRoute = AuthenticatedQuizQuizIdRouteImport.update({
   id: '/quiz/$quizId',
   path: '/quiz/$quizId',
@@ -50,14 +75,22 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/my-courses': typeof AuthenticatedMyCoursesRoute
+  '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
+  '/courses/': typeof CoursesIndexRoute
+  '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/my-courses': typeof AuthenticatedMyCoursesRoute
+  '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
+  '/courses': typeof CoursesIndexRoute
+  '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
 export interface FileRoutesById {
@@ -66,21 +99,47 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/my-courses': typeof AuthenticatedMyCoursesRoute
+  '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
+  '/courses/': typeof CoursesIndexRoute
+  '/_authenticated/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/_authenticated/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/join/$code' | '/quiz/$quizId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/my-courses'
+    | '/courses/$slug'
+    | '/join/$code'
+    | '/courses/'
+    | '/course/$courseId'
+    | '/quiz/$quizId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/join/$code' | '/quiz/$quizId'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/my-courses'
+    | '/courses/$slug'
+    | '/join/$code'
+    | '/courses'
+    | '/course/$courseId'
+    | '/quiz/$quizId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/my-courses'
+    | '/courses/$slug'
     | '/join/$code'
+    | '/courses/'
+    | '/_authenticated/course/$courseId'
     | '/_authenticated/quiz/$quizId'
   fileRoutesById: FileRoutesById
 }
@@ -88,7 +147,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CoursesSlugRoute: typeof CoursesSlugRoute
   JoinCodeRoute: typeof JoinCodeRoute
+  CoursesIndexRoute: typeof CoursesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -121,12 +182,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/my-courses': {
+      id: '/_authenticated/my-courses'
+      path: '/my-courses'
+      fullPath: '/my-courses'
+      preLoaderRoute: typeof AuthenticatedMyCoursesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/courses/': {
+      id: '/courses/'
+      path: '/courses'
+      fullPath: '/courses/'
+      preLoaderRoute: typeof CoursesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/courses/$slug': {
+      id: '/courses/$slug'
+      path: '/courses/$slug'
+      fullPath: '/courses/$slug'
+      preLoaderRoute: typeof CoursesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$code': {
       id: '/join/$code'
       path: '/join/$code'
       fullPath: '/join/$code'
       preLoaderRoute: typeof JoinCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/course/$courseId': {
+      id: '/_authenticated/course/$courseId'
+      path: '/course/$courseId'
+      fullPath: '/course/$courseId'
+      preLoaderRoute: typeof AuthenticatedCourseCourseIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/quiz/$quizId': {
       id: '/_authenticated/quiz/$quizId'
@@ -140,11 +229,15 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedMyCoursesRoute: typeof AuthenticatedMyCoursesRoute
+  AuthenticatedCourseCourseIdRoute: typeof AuthenticatedCourseCourseIdRoute
   AuthenticatedQuizQuizIdRoute: typeof AuthenticatedQuizQuizIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedMyCoursesRoute: AuthenticatedMyCoursesRoute,
+  AuthenticatedCourseCourseIdRoute: AuthenticatedCourseCourseIdRoute,
   AuthenticatedQuizQuizIdRoute: AuthenticatedQuizQuizIdRoute,
 }
 
@@ -155,7 +248,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  CoursesSlugRoute: CoursesSlugRoute,
   JoinCodeRoute: JoinCodeRoute,
+  CoursesIndexRoute: CoursesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
