@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice, slugify } from "@/lib/courses";
 
-export const Route = createFileRoute("/_authenticated/courses")({
+export const Route = createFileRoute("/_authenticated/my-courses")({
   head: () => ({
     meta: [
       { title: "My courses — EDxKa" },

@@ -132,7 +132,7 @@ function CourseEditor() {
     <div className="min-h-screen confetti-bg">
       <main className="mx-auto max-w-4xl px-6 py-10">
         <Button asChild variant="ghost" className="font-bold">
-          <Link to="/courses">
+          <Link to="/my-courses">
             <ArrowLeft className="size-4" /> My courses
           </Link>
         </Button>
