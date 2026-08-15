@@ -59,6 +59,118 @@ export type Database = {
           },
         ]
       }
+      courses: {
+        Row: {
+          cover_url: string | null
+          created_at: string
+          currency: string
+          id: string
+          is_published: boolean
+          price_cents: number
+          slug: string
+          summary: string
+          title: string
+          tutor_id: string
+        }
+        Insert: {
+          cover_url?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_published?: boolean
+          price_cents?: number
+          slug: string
+          summary?: string
+          title?: string
+          tutor_id: string
+        }
+        Update: {
+          cover_url?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          is_published?: boolean
+          price_cents?: number
+          slug?: string
+          summary?: string
+          title?: string
+          tutor_id?: string
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["enrollment_status"]
+          student_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          student_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          body: string
+          course_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["lesson_kind"]
+          order_index: number
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          body?: string
+          course_id: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["lesson_kind"]
+          order_index?: number
+          title?: string
+          video_url?: string | null
+        }
+        Update: {
+          body?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["lesson_kind"]
+          order_index?: number
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participants: {
         Row: {
           finished_at: string | null
@@ -282,6 +394,8 @@ export type Database = {
       }
     }
     Enums: {
+      enrollment_status: "free" | "pending" | "paid"
+      lesson_kind: "video" | "text"
       question_type: "multiple_choice" | "true_false" | "short_answer"
       quiz_status: "draft" | "lobby" | "live" | "ended"
     }
@@ -411,6 +525,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      enrollment_status: ["free", "pending", "paid"],
+      lesson_kind: ["video", "text"],
       question_type: ["multiple_choice", "true_false", "short_answer"],
       quiz_status: ["draft", "lobby", "live", "ended"],
     },
