@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { LogOut, Plus, Radio, Trophy } from "lucide-react";
+import { BookOpen, LogOut, Plus, Radio, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -80,9 +80,16 @@ function Dashboard() {
         <Link to="/" className="font-display text-2xl font-bold">
           ED<span className="text-primary">xKa</span>
         </Link>
-        <Button variant="outline" onClick={signOut} className="chunky rounded-full border-2 font-bold">
-          <LogOut className="size-4" /> Sign out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="chunky rounded-full border-2 font-bold">
+            <Link to="/my-courses">
+              <BookOpen className="size-4" /> My courses
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={signOut} className="chunky rounded-full border-2 font-bold">
+            <LogOut className="size-4" /> Sign out
+          </Button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pb-24">

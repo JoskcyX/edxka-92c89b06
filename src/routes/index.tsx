@@ -42,9 +42,14 @@ function Landing() {
         <span className="font-display text-2xl font-bold">
           ED<span className="text-primary">xKa</span>
         </span>
-        <Button asChild variant="outline" className="chunky rounded-full border-2 font-bold">
-          <Link to="/auth">Tutor sign in</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" className="rounded-full font-bold">
+            <Link to="/courses">Courses</Link>
+          </Button>
+          <Button asChild variant="outline" className="chunky rounded-full border-2 font-bold">
+            <Link to="/auth">Tutor sign in</Link>
+          </Button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 pb-24">
