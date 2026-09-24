@@ -209,3 +209,83 @@
   animation: pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes float-object {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+}
+
+@keyframes drift-dot {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(8px, -16px, 0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.75);
+  }
+}
+
+@utility float-object {
+  animation: float-object 5.5s ease-in-out infinite;
+}
+
+@utility float-dot {
+  position: absolute;
+  border-radius: 999px;
+  animation: drift-dot 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@utility pulse-dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@utility learning-stage {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--color-secondary) 16%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--color-secondary) 16%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+  box-shadow: 18px 18px 0 color-mix(in oklab, var(--color-primary) 14%, transparent);
+}
+
+@utility course-tile {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+  &:hover {
+    transform: translateY(-7px) rotate(-0.5deg);
+    border-color: var(--color-secondary);
+    box-shadow: 0 14px 0 color-mix(in oklab, var(--color-secondary) 16%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float-object,
+  .float-dot,
+  .pulse-dot,
+  .pop-in {
+    animation: none;
+  }
+
+  .course-tile:hover {
+    transform: none;
+  }
+}
+
