@@ -17,9 +17,11 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedMyCoursesRouteImport } from './routes/_authenticated/my-courses'
 import { Route as AuthenticatedUpgradeRouteImport } from './routes/_authenticated/upgrade'
+import { Route as ClassCodeRouteImport } from './routes/class.$code'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
+import { Route as AuthenticatedClassClassIdRouteImport } from './routes/_authenticated/class.$classId'
 import { Route as AuthenticatedCourseCourseIdRouteImport } from './routes/_authenticated/course.$courseId'
 import { Route as AuthenticatedQuizQuizIdRouteImport } from './routes/_authenticated/quiz.$quizId'
 
@@ -62,6 +64,11 @@ const AuthenticatedUpgradeRoute = AuthenticatedUpgradeRouteImport.update({
   path: '/upgrade',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ClassCodeRoute = ClassCodeRouteImport.update({
+  id: '/class/$code',
+  path: '/class/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CoursesIndexRoute = CoursesIndexRouteImport.update({
   id: '/courses/',
   path: '/courses/',
@@ -77,6 +84,12 @@ const JoinCodeRoute = JoinCodeRouteImport.update({
   path: '/join/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedClassClassIdRoute =
+  AuthenticatedClassClassIdRouteImport.update({
+    id: '/class/$classId',
+    path: '/class/$classId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCourseCourseIdRoute =
   AuthenticatedCourseCourseIdRouteImport.update({
     id: '/course/$courseId',
@@ -97,9 +110,11 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-courses': typeof AuthenticatedMyCoursesRoute
   '/upgrade': typeof AuthenticatedUpgradeRoute
+  '/class/$code': typeof ClassCodeRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
   '/courses/': typeof CoursesIndexRoute
+  '/class/$classId': typeof AuthenticatedClassClassIdRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
@@ -111,9 +126,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/my-courses': typeof AuthenticatedMyCoursesRoute
   '/upgrade': typeof AuthenticatedUpgradeRoute
+  '/class/$code': typeof ClassCodeRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
   '/courses': typeof CoursesIndexRoute
+  '/class/$classId': typeof AuthenticatedClassClassIdRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
@@ -127,9 +144,11 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/my-courses': typeof AuthenticatedMyCoursesRoute
   '/_authenticated/upgrade': typeof AuthenticatedUpgradeRoute
+  '/class/$code': typeof ClassCodeRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
   '/courses/': typeof CoursesIndexRoute
+  '/_authenticated/class/$classId': typeof AuthenticatedClassClassIdRoute
   '/_authenticated/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/_authenticated/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
@@ -143,9 +162,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/my-courses'
     | '/upgrade'
+    | '/class/$code'
     | '/courses/$slug'
     | '/join/$code'
     | '/courses/'
+    | '/class/$classId'
     | '/course/$courseId'
     | '/quiz/$quizId'
   fileRoutesByTo: FileRoutesByTo
@@ -157,9 +178,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/my-courses'
     | '/upgrade'
+    | '/class/$code'
     | '/courses/$slug'
     | '/join/$code'
     | '/courses'
+    | '/class/$classId'
     | '/course/$courseId'
     | '/quiz/$quizId'
   id:
@@ -172,9 +195,11 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/my-courses'
     | '/_authenticated/upgrade'
+    | '/class/$code'
     | '/courses/$slug'
     | '/join/$code'
     | '/courses/'
+    | '/_authenticated/class/$classId'
     | '/_authenticated/course/$courseId'
     | '/_authenticated/quiz/$quizId'
   fileRoutesById: FileRoutesById
@@ -185,6 +210,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ClassCodeRoute: typeof ClassCodeRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   JoinCodeRoute: typeof JoinCodeRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
@@ -248,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUpgradeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/class/$code': {
+      id: '/class/$code'
+      path: '/class/$code'
+      fullPath: '/class/$code'
+      preLoaderRoute: typeof ClassCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/courses/': {
       id: '/courses/'
       path: '/courses'
@@ -268,6 +301,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/join/$code'
       preLoaderRoute: typeof JoinCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/class/$classId': {
+      id: '/_authenticated/class/$classId'
+      path: '/class/$classId'
+      fullPath: '/class/$classId'
+      preLoaderRoute: typeof AuthenticatedClassClassIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/course/$courseId': {
       id: '/_authenticated/course/$courseId'
@@ -290,6 +330,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyCoursesRoute: typeof AuthenticatedMyCoursesRoute
   AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
+  AuthenticatedClassClassIdRoute: typeof AuthenticatedClassClassIdRoute
   AuthenticatedCourseCourseIdRoute: typeof AuthenticatedCourseCourseIdRoute
   AuthenticatedQuizQuizIdRoute: typeof AuthenticatedQuizQuizIdRoute
 }
@@ -298,6 +339,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyCoursesRoute: AuthenticatedMyCoursesRoute,
   AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
+  AuthenticatedClassClassIdRoute: AuthenticatedClassClassIdRoute,
   AuthenticatedCourseCourseIdRoute: AuthenticatedCourseCourseIdRoute,
   AuthenticatedQuizQuizIdRoute: AuthenticatedQuizQuizIdRoute,
 }
@@ -311,6 +353,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ClassCodeRoute: ClassCodeRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   JoinCodeRoute: JoinCodeRoute,
   CoursesIndexRoute: CoursesIndexRoute,

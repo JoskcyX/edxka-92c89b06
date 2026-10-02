@@ -164,6 +164,8 @@ function Dashboard() {
           ))}
         </div>
 
+        <ClassesSection />
+
         <div className="mt-12">
           <StudentProgress />
         </div>
