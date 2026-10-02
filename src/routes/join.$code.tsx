@@ -117,6 +117,12 @@ function JoinPage() {
       return;
     }
     setJoining(true);
+    const { data: open } = await supabase.rpc("quiz_join_open", { _quiz_id: quiz.id });
+    if (open === false) {
+      setJoining(false);
+      toast.error("This quiz isn't open right now — check the time window.");
+      return;
+    }
     const { data, error } = await supabase
       .from("participants")
       .insert({ quiz_id: quiz.id, name: parsed.data.name, phone: parsed.data.phone })
