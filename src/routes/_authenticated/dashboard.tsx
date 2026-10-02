@@ -164,10 +164,78 @@ function Dashboard() {
           ))}
         </div>
 
+        <ClassesSection />
+
         <div className="mt-12">
           <StudentProgress />
         </div>
       </main>
     </div>
+  );
+}
+
+function ClassesSection() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState("");
+  const classes = useQuery({
+    queryKey: ["classes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("classes")
+        .select("id, title, subject, join_code")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const create = useMutation({
+    mutationFn: async (name: string) => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) throw new Error("Not signed in");
+      const { data, error } = await supabase
+        .from("classes")
+        .insert({ title: name, join_code: makeJoinCode(), tutor_id: u.user.id })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (d) => {
+      setTitle("");
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      navigate({ to: "/class/$classId", params: { classId: d.id } });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create class"),
+  });
+  return (
+    <section className="mt-12">
+      <h2 className="text-3xl font-bold">Your classes</h2>
+      <p className="mt-1 text-muted-foreground">Students request to join with a link; you approve them, share resources and push quizzes.</p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!title.trim()) {
+            toast.error("Give your class a name");
+            return;
+          }
+          create.mutate(title.trim());
+        }}
+        className="mt-4 flex flex-col gap-3 surface-card p-4 sm:flex-row"
+      >
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. CHM 101 — Group A" maxLength={120} className="h-12 rounded-xl border-2" />
+        <Button type="submit" disabled={create.isPending} className="chunky h-12 rounded-xl px-6 font-bold">
+          <Plus className="size-4" /> New class
+        </Button>
+      </form>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {classes.data?.map((c) => (
+          <Link key={c.id} to="/class/$classId" params={{ classId: c.id }} className="surface-card p-5 transition-transform hover:-translate-y-0.5">
+            <p className="text-xl font-bold">{c.title}</p>
+            <p className="text-sm text-muted-foreground">Code <span className="font-bold tracking-widest text-foreground">{c.join_code}</span></p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
