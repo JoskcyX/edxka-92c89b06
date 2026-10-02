@@ -78,11 +78,11 @@ function ClassPage() {
     e.preventDefault();
     if (!info) return;
     const p = schema.safeParse({ name, phone });
-    if (!p.success) return toast.error(p.error.issues[0]?.message ?? "Check your details");
+    if (!p.success) { toast.error(p.error.issues[0]?.message ?? "Check your details"); return; }
     setBusy(true);
     const { data, error } = await supabase.rpc("request_class_join", { _class_id: info.id, _name: p.data.name, _phone: p.data.phone });
     setBusy(false);
-    if (error || !data) return toast.error("Could not send your request");
+    if (error || !data) { toast.error("Could not send your request"); return; }
     localStorage.setItem(key, data as string);
     setMemberId(data as string);
     setStatus("pending");

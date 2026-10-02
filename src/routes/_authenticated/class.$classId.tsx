@@ -221,7 +221,7 @@ function ClassRoom() {
             </div>
 
             <h2 className="mt-8 text-2xl font-bold">Resources</h2>
-            <form onSubmit={(e) => { e.preventDefault(); if (!rTitle.trim()) return toast.error("Add a title"); addResource.mutate(); }} className="surface-card mt-3 grid gap-2 p-4">
+            <form onSubmit={(e) => { e.preventDefault(); if (!rTitle.trim()) { toast.error("Add a title"); return; } addResource.mutate(); }} className="surface-card mt-3 grid gap-2 p-4">
               <div className="flex gap-2">
                 <Input value={rTitle} onChange={(e) => setRTitle(e.target.value)} placeholder="Title" />
                 <select value={rKind} onChange={(e) => setRKind(e.target.value as typeof rKind)} className="rounded-md border border-input bg-background px-2">
