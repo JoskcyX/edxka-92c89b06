@@ -7,3 +7,5 @@
 - [x] Build the selected asymmetric academic layout with Lucide icons and floating background elements.
 - [ ] Verify the refreshed homepage on desktop and mobile.- [x] Classroom Phase 1: classes, join requests, resources, pop + anytime quizzes with time windows.
 - [ ] Walk through the full class flow in the preview (create → join → approve → push quiz).
+- [x] Tutors upload class videos from their device; approved students watch on EDxKa.
+- [x] Live video rooms (Daily.co): tutor start/end, approved students join.
