@@ -86,15 +86,23 @@ function ClassRoom() {
   const [rKind, setRKind] = useState<"link" | "note" | "video">("link");
   const [rUrl, setRUrl] = useState("");
   const [rBody, setRBody] = useState("");
+  const [rFile, setRFile] = useState<File | null>(null);
   const addResource = useMutation({
     mutationFn: async () => {
+      let url = rUrl.trim() || null;
+      if (rKind === "video" && rFile) {
+        const path = `${classId}/${Date.now()}-${rFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+        const { error: upErr } = await supabase.storage.from("class-videos").upload(path, rFile, { contentType: rFile.type });
+        if (upErr) throw upErr;
+        url = `storage:${path}`;
+      }
       const { error } = await supabase.from("class_resources").insert({
-        class_id: classId, title: rTitle.trim(), kind: rKind, url: rUrl.trim() || null, body: rBody.trim(),
+        class_id: classId, title: rTitle.trim(), kind: rKind, url, body: rBody.trim(),
         order_index: resources.data?.length ?? 0,
       });
       if (error) throw error;
     },
-    onSuccess: () => { setRTitle(""); setRUrl(""); setRBody(""); inv(); toast.success("Resource added"); },
+    onSuccess: () => { setRTitle(""); setRUrl(""); setRBody(""); setRFile(null); inv(); toast.success("Resource added"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
   const delResource = useMutation({
