@@ -183,6 +183,9 @@ export type Database = {
           description: string
           id: string
           join_code: string
+          live_room_name: string | null
+          live_room_url: string | null
+          live_started_at: string | null
           subject: string
           title: string
           tutor_id: string
@@ -192,6 +195,9 @@ export type Database = {
           description?: string
           id?: string
           join_code: string
+          live_room_name?: string | null
+          live_room_url?: string | null
+          live_started_at?: string | null
           subject?: string
           title?: string
           tutor_id: string
@@ -201,6 +207,9 @@ export type Database = {
           description?: string
           id?: string
           join_code?: string
+          live_room_name?: string | null
+          live_room_url?: string | null
+          live_started_at?: string | null
           subject?: string
           title?: string
           tutor_id?: string
