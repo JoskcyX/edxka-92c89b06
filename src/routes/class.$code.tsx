@@ -7,6 +7,9 @@ import { BookOpen, Clock, FileText, Link2, PlayCircle, Radio, Video } from "luci
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getClassVideoUrl } from "@/lib/class-videos.functions";
+import { embedUrl } from "@/lib/courses";
 
 export const Route = createFileRoute("/class/$code")({
   head: () => ({
@@ -166,7 +169,8 @@ function ClassPage() {
                     {r.kind === "video" ? <Video className="size-4 text-primary" /> : r.kind === "note" ? <FileText className="size-4 text-primary" /> : <Link2 className="size-4 text-primary" />}
                     {r.title}
                   </p>
-                  {r.url && <a href={r.url} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm font-bold text-secondary underline">{r.url}</a>}
+                  {r.url && r.kind === "video" && <VideoPlayer memberId={memberId} resourceId={r.id} url={r.url} />}
+                  {r.url && r.kind !== "video" && <a href={r.url} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm font-bold text-secondary underline">{r.url}</a>}
                   {r.body && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{r.body}</p>}
                 </div>
               ))}
@@ -176,6 +180,22 @@ function ClassPage() {
       )}
     </Shell>
   );
+}
+
+function VideoPlayer({ memberId, resourceId, url }: { memberId: string; resourceId: string; url: string }) {
+  const fetchUrl = useServerFn(getClassVideoUrl);
+  const [src, setSrc] = useState<string | null>(null);
+  const uploaded = url.startsWith("storage:");
+  useEffect(() => {
+    if (!uploaded) return;
+    fetchUrl({ data: { memberId, resourceId } }).then((r) => setSrc(r.url)).catch(() => toast.error("Could not load video"));
+  }, [uploaded, memberId, resourceId, fetchUrl]);
+  if (uploaded) {
+    return src ? <video src={src} controls controlsList="nodownload" className="mt-2 w-full rounded-xl" onContextMenu={(e) => e.preventDefault()} /> : <p className="mt-2 text-sm text-muted-foreground">Loading video…</p>;
+  }
+  const embed = embedUrl(url);
+  if (embed) return <iframe src={embed} className="mt-2 aspect-video w-full rounded-xl" allowFullScreen title="Class video" />;
+  return <a href={url} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm font-bold text-secondary underline">{url}</a>;
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
