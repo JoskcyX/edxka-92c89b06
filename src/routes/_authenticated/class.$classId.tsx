@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { endLiveClass, startLiveClass } from "@/lib/live.functions";
+import { LiveRoom } from "@/components/LiveRoom";
 
 export const Route = createFileRoute("/_authenticated/class/$classId")({
   head: () => ({
@@ -144,6 +147,20 @@ function ClassRoom() {
     onSuccess: () => { inv(); toast.success("Quiz closed"); },
   });
 
+  const startFn = useServerFn(startLiveClass);
+  const endFn = useServerFn(endLiveClass);
+  const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const goLive = useMutation({
+    mutationFn: () => startFn({ data: { classId } }),
+    onSuccess: (r) => { setRoomUrl(r.url); inv(); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not start"),
+  });
+  const endLive = useMutation({
+    mutationFn: () => endFn({ data: { classId } }),
+    onSuccess: () => { setRoomUrl(null); inv(); toast.success("Class ended"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not end"),
+  });
+
   if (cls.isLoading) return <div className="p-10 text-muted-foreground">Loading…</div>;
   if (!cls.data) return <div className="p-10">Class not found.</div>;
 
@@ -153,14 +170,25 @@ function ClassRoom() {
 
   return (
     <div className="min-h-screen confetti-bg">
+      {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} leaveLabel="Minimise" />}
       <main className="mx-auto max-w-5xl px-6 py-8 pb-24">
         <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground"><ArrowLeft className="size-4" /> Dashboard</Link>
         <h1 className="mt-3 text-4xl font-bold">{cls.data.title}</h1>
         <div className="surface-card mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
           <div><p className="text-sm text-muted-foreground">Class code</p><p className="text-2xl font-bold tracking-widest">{cls.data.join_code}</p></div>
-          <Button variant="outline" className="rounded-full border-2 font-bold" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied"); }}>
+          <div className="flex flex-wrap gap-2">
+          {cls.data.live_room_name ? (
+            <>
+              <Button onClick={() => goLive.mutate()} disabled={goLive.isPending} className="chunky rounded-full font-bold"><Radio className="size-4" /> Rejoin live</Button>
+              <Button variant="outline" onClick={() => endLive.mutate()} disabled={endLive.isPending} className="rounded-full border-2 font-bold">End class</Button>
+            </>
+          ) : (
+            <Button onClick={() => goLive.mutate()} disabled={goLive.isPending} className="chunky rounded-full font-bold"><Radio className="size-4" /> {goLive.isPending ? "Starting…" : "Start live class"}</Button>
+          )}
+<Button variant="outline" className="rounded-full border-2 font-bold" onClick={() => { navigator.clipboard.writeText(link); toast.success("Link copied"); }}>
             <Copy className="size-4" /> Copy join link
           </Button>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
