@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { getClassVideoUrl } from "@/lib/class-videos.functions";
+import { getLiveStatus, joinLiveClass } from "@/lib/live.functions";
+import { LiveRoom } from "@/components/LiveRoom";
 import { embedUrl } from "@/lib/courses";
 
 export const Route = createFileRoute("/class/$code")({
@@ -55,6 +57,16 @@ function ClassPage() {
     });
   }, [code, key]);
 
+  const liveFn = useServerFn(getLiveStatus);
+  const joinFn = useServerFn(joinLiveClass);
+  const [live, setLive] = useState(false);
+  const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const joinLive = async () => {
+    if (!memberId) return;
+    try { setRoomUrl((await joinFn({ data: { memberId } })).url); }
+    catch { toast.error("Could not join the live class"); }
+  };
+
   const refresh = useCallback(async () => {
     if (!memberId) return;
     const { data } = await supabase.rpc("get_class_membership", { _member_id: memberId });
@@ -68,8 +80,9 @@ function ClassPage() {
       ]);
       setResources((r.data as Resource[]) ?? []);
       setQuizzes((q.data as ClassQuiz[]) ?? []);
+      liveFn({ data: { memberId } }).then((r) => setLive(r.live)).catch(() => {});
     }
-  }, [memberId, key]);
+  }, [memberId, key, liveFn]);
 
   useEffect(() => {
     refresh();
@@ -129,6 +142,13 @@ function ClassPage() {
 
       {memberId && status === "approved" && (
         <div className="mt-8 grid gap-8">
+          {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} />}
+          {live && (
+            <button onClick={joinLive} className="surface-card flex items-center justify-between gap-4 border-secondary bg-secondary p-6 text-left text-secondary-foreground">
+              <div className="flex items-center gap-3"><Video className="size-6" /><div><p className="text-sm font-bold uppercase">Your class is live</p><p className="text-xl font-bold">Tap to join the video class</p></div></div>
+              <PlayCircle className="size-8" />
+            </button>
+          )}
           {pop && (
             <Link to="/join/$code" params={{ code: pop.join_code }} className="surface-card flex items-center justify-between gap-4 border-primary bg-primary p-6 text-primary-foreground">
               <div className="flex items-center gap-3"><Radio className="size-6 animate-pulse" /><div><p className="text-sm font-bold uppercase">Pop quiz now</p><p className="text-xl font-bold">{pop.title}</p></div></div>
