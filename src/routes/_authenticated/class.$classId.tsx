@@ -84,6 +84,38 @@ function ClassRoom() {
     },
     onSuccess: inv,
   });
+  const removeMember = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("class_members").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { inv(); toast.success("Student removed"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  const roster = useQuery({
+    queryKey: ["class", classId, "roster"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("class_roster").select("*").eq("class_id", classId).order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [rosterText, setRosterText] = useState("");
+  const addRoster = useMutation({
+    mutationFn: async () => {
+      const rows = [...new Set(rosterText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))].slice(0, 1000)
+        .map((identifier) => ({ class_id: classId, identifier: identifier.slice(0, 120) }));
+      const { error } = await supabase.from("class_roster").upsert(rows, { onConflict: "class_id,identifier", ignoreDuplicates: true });
+      if (error) throw error;
+    },
+    onSuccess: () => { setRosterText(""); inv(); toast.success("List saved"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+  const delRoster = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from("class_roster").delete().eq("id", id); if (error) throw error; },
+    onSuccess: inv,
+  });
 
   const [rTitle, setRTitle] = useState("");
   const [rKind, setRKind] = useState<"link" | "note" | "video">("link");
@@ -206,15 +238,58 @@ function ClassRoom() {
                 </div>
               ))}
             </div>
-            <h2 className="mt-8 text-2xl font-bold">Roster ({approved.length})</h2>
+            <h2 className="mt-8 text-2xl font-bold">Roster ({approved.length}) · {approved.filter(isLive).length} in class now</h2>
             <div className="mt-3 grid gap-2">
-              {approved.map((m) => (
-                <div key={m.id} className="surface-card flex items-center justify-between p-3">
-                  <div><p className="font-bold">{m.name}</p><p className="text-xs text-muted-foreground">{m.phone}</p></div>
-                  <Button size="sm" variant="ghost" onClick={() => setStatus.mutate({ id: m.id, status: "rejected" })}>Remove</Button>
-                </div>
-              ))}
+              {approved.map((m) => {
+                const on = isLive(m);
+                const left = !on && m.left_at;
+                return (
+                  <div key={m.id} className="surface-card flex items-center justify-between gap-2 p-3">
+                    <div>
+                      <p className="flex items-center gap-2 font-bold">
+                        <span className={`size-2.5 rounded-full ${on ? "bg-secondary" : left ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                        {m.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {m.phone} · {on ? "Present" : left ? `Left at ${new Date(m.left_at!).toLocaleTimeString()}` : "Not in live class"}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Remove ${m.name} from this class?`)) removeMember.mutate(m.id); }}><Trash2 className="size-4" /> Remove</Button>
+                  </div>
+                );
+              })}
             </div>
+
+            <h2 className="mt-8 text-2xl font-bold">Expected students (optional)</h2>
+            <p className="text-sm text-muted-foreground">Paste names, matric numbers or phone numbers — one per line. They're ticked off as students come into the live class.</p>
+            <div className="surface-card mt-3 grid gap-2 p-4">
+              <Textarea value={rosterText} onChange={(e) => setRosterText(e.target.value)} placeholder={"Ada Obi\nMAT/2024/001\n08012345678"} rows={4} />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" disabled={!rosterText.trim() || addRoster.isPending} onClick={() => addRoster.mutate()} className="rounded-full font-bold"><Plus className="size-4" /> Add to list</Button>
+                <label className="cursor-pointer text-sm font-bold text-primary underline">
+                  Upload .txt / .csv
+                  <input type="file" accept=".txt,.csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setRosterText((await f.text()).split(/[\r\n]+/).map((l) => l.split(",")[0]).join("\n")); }} />
+                </label>
+              </div>
+            </div>
+            {(roster.data?.length ?? 0) > 0 && (
+              <div className="mt-3 grid gap-1">
+                <p className="text-sm font-bold">{roster.data!.filter((r) => rosterStatus(r.identifier) === "present").length} of {roster.data!.length} present</p>
+                {roster.data!.map((r) => {
+                  const st = rosterStatus(r.identifier);
+                  return (
+                    <div key={r.id} className="surface-card flex items-center justify-between px-3 py-2 text-sm">
+                      <span className="flex items-center gap-2">
+                        <span className={`size-2.5 rounded-full ${st === "present" ? "bg-secondary" : st === "left" ? "bg-primary" : "bg-muted-foreground/40"}`} />
+                        <span className="font-bold">{r.identifier}</span>
+                        <span className="text-muted-foreground">{st === "present" ? "Present" : st === "left" ? "Left" : st === "joined" ? "In class, not live" : "Absent"}</span>
+                      </span>
+                      <button aria-label="Remove from list" onClick={() => delRoster.mutate(r.id)} className="text-muted-foreground hover:text-destructive"><X className="size-4" /></button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section>
