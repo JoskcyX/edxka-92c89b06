@@ -199,6 +199,17 @@ function ClassRoom() {
   const link = typeof window !== "undefined" ? `${window.location.origin}/class/${cls.data.join_code}` : "";
   const pending = members.data?.filter((m) => m.status === "pending") ?? [];
   const approved = members.data?.filter((m) => m.status === "approved") ?? [];
+  const isLive = (m: { last_seen_at: string | null; left_at: string | null }) =>
+    !!m.last_seen_at && !m.left_at && Date.now() - new Date(m.last_seen_at).getTime() < 45000;
+  const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const rosterStatus = (id: string) => {
+    const k = norm(id);
+    const m = approved.find((x) => norm(x.name) === k || norm(x.phone) === k || (k.length >= 3 && norm(x.name).includes(k)));
+    if (!m) return "absent";
+    if (isLive(m)) return "present";
+    if (m.left_at) return "left";
+    return "joined";
+  };
 
   return (
     <div className="min-h-screen confetti-bg">
