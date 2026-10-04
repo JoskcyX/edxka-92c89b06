@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { BookOpen, LogOut, Plus, Radio, Trophy } from "lucide-react";
+import { BookOpen, LogOut, Plus, Radio, Trash2, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,15 @@ function Dashboard() {
       navigate({ to: "/quiz/$quizId", params: { quizId: data.id } });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "Could not create quiz"),
+  });
+
+  const deleteQuiz = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("quizzes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["quizzes"] }); toast.success("Quiz deleted"); },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete quiz"),
   });
 
   const signOut = async () => {
@@ -160,6 +169,18 @@ function Dashboard() {
                 {quiz.status === "live" && <Radio className="size-4" />}
                 {STATUS_LABEL[quiz.status] ?? quiz.status}
               </span>
+              <button
+                type="button"
+                aria-label="Delete quiz"
+                className="rounded-full p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (confirm(`Delete "${quiz.title}"? This removes its questions and results.`)) deleteQuiz.mutate(quiz.id);
+                }}
+              >
+                <Trash2 className="size-4" />
+              </button>
             </Link>
           ))}
         </div>

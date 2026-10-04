@@ -61,6 +61,15 @@ function ClassPage() {
   const joinFn = useServerFn(joinLiveClass);
   const [live, setLive] = useState(false);
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!roomUrl || !memberId) return;
+    const beat = (present: boolean) => { supabase.rpc("live_heartbeat", { _member_id: memberId, _present: present }).then(() => {}); };
+    beat(true);
+    const t = setInterval(() => beat(true), 15000);
+    const bye = () => beat(false);
+    window.addEventListener("pagehide", bye);
+    return () => { clearInterval(t); window.removeEventListener("pagehide", bye); beat(false); };
+  }, [roomUrl, memberId]);
   const joinLive = async () => {
     if (!memberId) return;
     try { setRoomUrl((await joinFn({ data: { memberId } })).url); }

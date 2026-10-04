@@ -64,6 +64,8 @@ export type Database = {
           class_id: string
           id: string
           joined_at: string
+          last_seen_at: string | null
+          left_at: string | null
           name: string
           phone: string
           status: Database["public"]["Enums"]["class_member_status"]
@@ -72,6 +74,8 @@ export type Database = {
           class_id: string
           id?: string
           joined_at?: string
+          last_seen_at?: string | null
+          left_at?: string | null
           name: string
           phone?: string
           status?: Database["public"]["Enums"]["class_member_status"]
@@ -80,6 +84,8 @@ export type Database = {
           class_id?: string
           id?: string
           joined_at?: string
+          last_seen_at?: string | null
+          left_at?: string | null
           name?: string
           phone?: string
           status?: Database["public"]["Enums"]["class_member_status"]
@@ -170,6 +176,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "class_resources_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      class_roster: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_roster_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
@@ -657,6 +692,10 @@ export type Database = {
           time_limit: number
           type: Database["public"]["Enums"]["question_type"]
         }[]
+      }
+      live_heartbeat: {
+        Args: { _member_id: string; _present: boolean }
+        Returns: undefined
       }
       my_referral_list: {
         Args: never
