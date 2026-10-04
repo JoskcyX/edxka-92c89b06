@@ -98,7 +98,7 @@ function Landing() {
           </div>
 
           <div className="relative mx-auto w-full max-w-xl lg:translate-y-5">
-            <div className="learning-stage relative aspect-[1.05] overflow-hidden rounded-3xl border-2 border-border bg-accent p-5 sm:p-8">
+            <div className="learning-stage relative aspect-[1.05] overflow-hidden rounded-3xl border-2 border-border p-5 sm:p-8">
               <div className="absolute left-7 top-7 rounded-2xl bg-card p-3 shadow-lg float-object">
                 <BookOpen className="size-8 text-primary" />
               </div>

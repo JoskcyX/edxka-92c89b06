@@ -257,11 +257,17 @@
 }
 
 @utility learning-stage {
+  background-color: var(--color-muted);
   background-image:
-    linear-gradient(color-mix(in oklab, var(--color-secondary) 16%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--color-secondary) 16%, transparent) 1px, transparent 1px);
-  background-size: 28px 28px;
-  box-shadow: 18px 18px 0 color-mix(in oklab, var(--color-primary) 14%, transparent);
+    radial-gradient(color-mix(in oklab, var(--color-primary) 22%, transparent) 1.5px, transparent 1.5px),
+    radial-gradient(color-mix(in oklab, var(--color-warning) 26%, transparent) 1.5px, transparent 1.5px);
+  background-size:
+    26px 26px,
+    26px 26px;
+  background-position:
+    0 0,
+    13px 13px;
+  box-shadow: 18px 18px 0 color-mix(in oklab, var(--color-primary) 18%, transparent);
 }
 
 @utility course-tile {

@@ -102,6 +102,7 @@ function ClassRoom() {
     },
   });
   const [rosterText, setRosterText] = useState("");
+  const [rosterOn, setRosterOn] = useState(false);
   const addRoster = useMutation({
     mutationFn: async () => {
       const rows = [...new Set(rosterText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))].slice(0, 1000)
