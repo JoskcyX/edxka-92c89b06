@@ -272,8 +272,23 @@ function ClassRoom() {
               })}
             </div>
 
-            <h2 className="mt-8 text-2xl font-bold">Expected students (optional)</h2>
-            <p className="text-sm text-muted-foreground">Paste names, matric numbers or phone numbers — one per line. They're ticked off as students come into the live class.</p>
+            <div className="surface-card mt-8 flex items-center justify-between gap-3 p-4">
+              <div>
+                <h2 className="text-xl font-bold">Expected students</h2>
+                <p className="text-sm text-muted-foreground">Track attendance against your own list of names, matric numbers or phone numbers.</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={rosterOn}
+                onClick={() => setRosterOn((v) => !v)}
+                className={`relative h-8 w-14 shrink-0 rounded-full border-2 transition-colors ${rosterOn ? "border-secondary bg-secondary" : "border-border bg-muted"}`}
+              >
+                <span className={`absolute top-0.5 size-6 rounded-full bg-card shadow transition-all ${rosterOn ? "left-6" : "left-0.5"}`} />
+              </button>
+            </div>
+            {(rosterOn || (roster.data?.length ?? 0) > 0) && (<>
+            <p className="mt-4 text-sm text-muted-foreground">Paste names, matric numbers or phone numbers — one per line. They're ticked off as students come into the live class.</p>
             <div className="surface-card mt-3 grid gap-2 p-4">
               <Textarea value={rosterText} onChange={(e) => setRosterText(e.target.value)} placeholder={"Ada Obi\nMAT/2024/001\n08012345678"} rows={4} />
               <div className="flex flex-wrap items-center gap-2">
@@ -302,6 +317,7 @@ function ClassRoom() {
                 })}
               </div>
             )}
+            </>)}
           </section>
 
           <section>
