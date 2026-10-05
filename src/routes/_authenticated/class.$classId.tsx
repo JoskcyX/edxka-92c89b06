@@ -148,6 +148,7 @@ function ClassRoom() {
   });
 
   const [pick, setPick] = useState("");
+  const [preview, setPreview] = useState<{ id: string; title: string } | null>(null);
   const [opens, setOpens] = useState("");
   const [closes, setCloses] = useState("");
   const addAsync = useMutation({
