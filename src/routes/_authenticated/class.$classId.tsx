@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, Plus, Radio, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, Eye, Plus, Radio, Trash2, X } from "lucide-react";
+import { StudentPreview } from "@/components/StudentPreview";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -147,6 +148,7 @@ function ClassRoom() {
   });
 
   const [pick, setPick] = useState("");
+  const [preview, setPreview] = useState<{ id: string; title: string } | null>(null);
   const [opens, setOpens] = useState("");
   const [closes, setCloses] = useState("");
   const addAsync = useMutation({
@@ -332,9 +334,11 @@ function ClassRoom() {
                 <label className="text-xs font-bold">Closes<Input type="datetime-local" value={closes} onChange={(e) => setCloses(e.target.value)} /></label>
               </div>
               <div className="flex flex-wrap gap-2">
+                <Button disabled={!pick} onClick={() => setPreview({ id: pick, title: myQuizzes.data?.find((q) => q.id === pick)?.title ?? "Quiz" })} variant="ghost" className="rounded-full font-bold"><Eye className="size-4" /> Preview as student</Button>
                 <Button disabled={!pick || addAsync.isPending} onClick={() => addAsync.mutate()} variant="outline" className="rounded-full border-2 font-bold">Publish anytime quiz</Button>
                 <Button disabled={!pick || push.isPending} onClick={() => push.mutate(pick)} className="chunky rounded-full font-bold"><Radio className="size-4" /> Push pop quiz now</Button>
               </div>
+              {preview && <StudentPreview quizId={preview.id} title={preview.title} open onOpenChange={(o) => !o && setPreview(null)} />}
             </div>
             <div className="mt-3 grid gap-2">
               {linked.data?.map((l) => {
@@ -351,6 +355,7 @@ function ClassRoom() {
                       </p>
                     </div>
                     <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => setPreview({ id: q.id, title: q.title })}><Eye className="size-4" /> Preview</Button>
                       <Button asChild size="sm" variant="outline"><Link to="/quiz/$quizId" params={{ quizId: q.id }}>Results</Link></Button>
                       {q.status !== "ended" && <Button size="sm" variant="ghost" onClick={() => unpublish.mutate(q.id)}>Unpublish</Button>}
                     </div>
