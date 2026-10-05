@@ -1,5 +1,7 @@
 # EDxKa Roadmap
 
+- [ ] Fix signup referral-code failure and unreadable errors; verify without sending test emails.
+
 - [ ] Finish Tutor Pro limits and referral dashboard wiring.
 - [x] Redesign the homepage to present both live quizzes and courses.
 - [x] Add interactive motion and floating educational objects with reduced-motion support.

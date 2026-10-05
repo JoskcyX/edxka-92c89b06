@@ -19,6 +19,8 @@ export const Route = createFileRoute("/auth")({
       },
       { property: "og:title", content: "Tutor sign in — EDxKa" },
       { property: "og:description", content: "Create quizzes and run live sessions with your class." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -50,12 +52,23 @@ function AuthPage() {
   }, [navigate]);
 
   const friendlyError = (error: unknown) => {
-    const message = error instanceof Error ? error.message : "Something went wrong";
-    if (/rate limit|too many/i.test(message)) {
-      return "Too many emails sent from this project right now. Wait a few minutes and try again.";
+    const details = typeof error === "object" && error !== null ? error as { message?: unknown; code?: unknown; status?: unknown } : undefined;
+    const rawMessage = typeof details?.message === "string" ? details.message.trim() : typeof error === "string" ? error.trim() : "";
+    const code = typeof details?.code === "string" ? details.code : "";
+    const message = !rawMessage || /^(\{\s*\}|\[object Object\])$/.test(rawMessage)
+      ? "We couldn't complete your request. Please try again."
+      : rawMessage;
+    if (details?.status === 500 || code === "unexpected_failure" || /database error|saving new user/i.test(message)) {
+      return "Account creation is temporarily unavailable. Please try again shortly; no confirmation email was sent.";
+    }
+    if (/rate limit|too many/i.test(message) || /over_.*rate_limit/.test(code)) {
+      return "Too many requests right now. Please wait before trying again.";
     }
     if (/pwned|compromised/i.test(message)) {
       return "That password has appeared in a known data breach. Please choose a different one.";
+    }
+    if (/failed to fetch|network|load failed/i.test(message)) {
+      return "We couldn't connect. Check your internet connection and try again.";
     }
     return message;
   };
@@ -143,7 +156,7 @@ function AuthPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             {sent === "confirm"
               ? `We sent a confirmation link to ${email}. Click it to activate your tutor account, then sign in.`
-              : `We sent a password reset link to ${email}. It expires shortly, so use it soon.`}
+              : `If an account exists for ${email}, you'll receive a password reset link. Use it as soon as it arrives.`}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Nothing yet? Check spam or promotions — delivery can take a minute.
