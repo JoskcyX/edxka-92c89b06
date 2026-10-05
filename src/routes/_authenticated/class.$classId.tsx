@@ -287,7 +287,7 @@ function ClassRoom() {
                 <span className={`absolute top-0.5 size-6 rounded-full bg-card shadow transition-all ${rosterOn ? "left-6" : "left-0.5"}`} />
               </button>
             </div>
-            {rosterOn && (<>
+            {(rosterOn || (roster.data?.length ?? 0) > 0) && (<>
             <p className="mt-4 text-sm text-muted-foreground">Paste names, matric numbers or phone numbers — one per line. They're ticked off as students come into the live class.</p>
             <div className="surface-card mt-3 grid gap-2 p-4">
               <Textarea value={rosterText} onChange={(e) => setRosterText(e.target.value)} placeholder={"Ada Obi\nMAT/2024/001\n08012345678"} rows={4} />
