@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+
+import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowRight,
   BookOpen,
@@ -48,11 +50,18 @@ function Landing() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
 
-  const join = (event: React.FormEvent) => {
+  const join = async (event: React.FormEvent) => {
     event.preventDefault();
     const clean = code.trim().toUpperCase();
     if (clean.length < 4) return;
-    navigate({ to: "/join/$code", params: { code: clean } });
+    // Class and quiz codes share the same alphabet — check classes first,
+    // then send whatever is left to the quiz join flow (it shows "not found").
+    const { data } = await supabase.rpc("get_class_by_code", { _code: clean });
+    if (data && data.length > 0) {
+      navigate({ to: "/class/$code", params: { code: clean } });
+    } else {
+      navigate({ to: "/join/$code", params: { code: clean } });
+    }
   };
 
   return (
@@ -162,9 +171,10 @@ function Landing() {
                 ))}
               </div>
               <form onSubmit={join} className="mt-9 flex max-w-xl flex-col gap-3 rounded-2xl border-2 border-border bg-background p-3 sm:flex-row">
-                <Input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="ENTER QUIZ CODE" maxLength={10} aria-label="Quiz code" className="h-12 flex-1 rounded-lg border-0 bg-card text-center text-base font-extrabold sm:text-left" />
-                <Button type="submit" className="chunky h-12 rounded-lg px-6 font-extrabold">Join quiz <Zap /></Button>
+                <Input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="ENTER CLASS OR QUIZ CODE" maxLength={10} aria-label="Class or quiz code" className="h-12 flex-1 rounded-lg border-0 bg-card text-center text-base font-extrabold sm:text-left" />
+                <Button type="submit" className="chunky h-12 rounded-lg px-6 font-extrabold">Join <Zap /></Button>
               </form>
+              <p className="mt-2 text-sm text-muted-foreground">Paste the code from your tutor's class or quiz link.</p>
             </div>
           </div>
         </section>
