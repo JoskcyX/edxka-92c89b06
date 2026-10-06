@@ -152,6 +152,7 @@ export type Database = {
           order_index: number
           title: string
           url: string | null
+          visible: boolean
         }
         Insert: {
           body?: string
@@ -162,6 +163,7 @@ export type Database = {
           order_index?: number
           title?: string
           url?: string | null
+          visible?: boolean
         }
         Update: {
           body?: string
@@ -172,6 +174,7 @@ export type Database = {
           order_index?: number
           title?: string
           url?: string | null
+          visible?: boolean
         }
         Relationships: [
           {
@@ -221,6 +224,8 @@ export type Database = {
           live_room_name: string | null
           live_room_url: string | null
           live_started_at: string | null
+          presenting_page: number
+          presenting_resource_id: string | null
           subject: string
           title: string
           tutor_id: string
@@ -233,6 +238,8 @@ export type Database = {
           live_room_name?: string | null
           live_room_url?: string | null
           live_started_at?: string | null
+          presenting_page?: number
+          presenting_resource_id?: string | null
           subject?: string
           title?: string
           tutor_id: string
@@ -245,11 +252,21 @@ export type Database = {
           live_room_name?: string | null
           live_room_url?: string | null
           live_started_at?: string | null
+          presenting_page?: number
+          presenting_resource_id?: string | null
           subject?: string
           title?: string
           tutor_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "classes_presenting_resource_id_fkey"
+            columns: ["presenting_resource_id"]
+            isOneToOne: false
+            referencedRelation: "class_resources"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       courses: {
         Row: {
@@ -648,6 +665,14 @@ export type Database = {
           status: Database["public"]["Enums"]["class_member_status"]
         }[]
       }
+      get_class_presentation: {
+        Args: { _member_id: string }
+        Returns: {
+          page: number
+          resource_id: string
+          title: string
+        }[]
+      }
       get_class_quizzes: {
         Args: { _member_id: string }
         Returns: {
@@ -779,7 +804,7 @@ export type Database = {
     Enums: {
       class_member_status: "pending" | "approved" | "rejected"
       class_quiz_mode: "pop" | "async"
-      class_resource_kind: "link" | "note" | "video"
+      class_resource_kind: "link" | "note" | "video" | "document"
       enrollment_status: "free" | "pending" | "paid"
       lesson_kind: "video" | "text"
       question_type: "multiple_choice" | "true_false" | "short_answer"
@@ -913,7 +938,7 @@ export const Constants = {
     Enums: {
       class_member_status: ["pending", "approved", "rejected"],
       class_quiz_mode: ["pop", "async"],
-      class_resource_kind: ["link", "note", "video"],
+      class_resource_kind: ["link", "note", "video", "document"],
       enrollment_status: ["free", "pending", "paid"],
       lesson_kind: ["video", "text"],
       question_type: ["multiple_choice", "true_false", "short_answer"],
