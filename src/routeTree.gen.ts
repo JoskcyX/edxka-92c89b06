@@ -21,8 +21,8 @@ import { Route as ClassCodeRouteImport } from './routes/class.$code'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
-import { Route as AuthenticatedClassClassIdRouteImport } from './routes/_authenticated/class.$classId'
 import { Route as AuthenticatedCourseCourseIdRouteImport } from './routes/_authenticated/course.$courseId'
+import { Route as AuthenticatedManageClassClassIdRouteImport } from './routes/_authenticated/manage-class.$classId'
 import { Route as AuthenticatedQuizQuizIdRouteImport } from './routes/_authenticated/quiz.$quizId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -84,16 +84,16 @@ const JoinCodeRoute = JoinCodeRouteImport.update({
   path: '/join/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedClassClassIdRoute =
-  AuthenticatedClassClassIdRouteImport.update({
-    id: '/class/$classId',
-    path: '/class/$classId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedCourseCourseIdRoute =
   AuthenticatedCourseCourseIdRouteImport.update({
     id: '/course/$courseId',
     path: '/course/$courseId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManageClassClassIdRoute =
+  AuthenticatedManageClassClassIdRouteImport.update({
+    id: '/manage-class/$classId',
+    path: '/manage-class/$classId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedQuizQuizIdRoute = AuthenticatedQuizQuizIdRouteImport.update({
@@ -114,8 +114,8 @@ export interface FileRoutesByFullPath {
   '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
   '/courses/': typeof CoursesIndexRoute
-  '/class/$classId': typeof AuthenticatedClassClassIdRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
+  '/manage-class/$classId': typeof AuthenticatedManageClassClassIdRoute
   '/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
 export interface FileRoutesByTo {
@@ -130,8 +130,8 @@ export interface FileRoutesByTo {
   '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
   '/courses': typeof CoursesIndexRoute
-  '/class/$classId': typeof AuthenticatedClassClassIdRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
+  '/manage-class/$classId': typeof AuthenticatedManageClassClassIdRoute
   '/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
 export interface FileRoutesById {
@@ -148,8 +148,8 @@ export interface FileRoutesById {
   '/courses/$slug': typeof CoursesSlugRoute
   '/join/$code': typeof JoinCodeRoute
   '/courses/': typeof CoursesIndexRoute
-  '/_authenticated/class/$classId': typeof AuthenticatedClassClassIdRoute
   '/_authenticated/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
+  '/_authenticated/manage-class/$classId': typeof AuthenticatedManageClassClassIdRoute
   '/_authenticated/quiz/$quizId': typeof AuthenticatedQuizQuizIdRoute
 }
 export interface FileRouteTypes {
@@ -166,8 +166,8 @@ export interface FileRouteTypes {
     | '/courses/$slug'
     | '/join/$code'
     | '/courses/'
-    | '/class/$classId'
     | '/course/$courseId'
+    | '/manage-class/$classId'
     | '/quiz/$quizId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -182,8 +182,8 @@ export interface FileRouteTypes {
     | '/courses/$slug'
     | '/join/$code'
     | '/courses'
-    | '/class/$classId'
     | '/course/$courseId'
+    | '/manage-class/$classId'
     | '/quiz/$quizId'
   id:
     | '__root__'
@@ -199,8 +199,8 @@ export interface FileRouteTypes {
     | '/courses/$slug'
     | '/join/$code'
     | '/courses/'
-    | '/_authenticated/class/$classId'
     | '/_authenticated/course/$courseId'
+    | '/_authenticated/manage-class/$classId'
     | '/_authenticated/quiz/$quizId'
   fileRoutesById: FileRoutesById
 }
@@ -302,18 +302,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/class/$classId': {
-      id: '/_authenticated/class/$classId'
-      path: '/class/$classId'
-      fullPath: '/class/$classId'
-      preLoaderRoute: typeof AuthenticatedClassClassIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/course/$courseId': {
       id: '/_authenticated/course/$courseId'
       path: '/course/$courseId'
       fullPath: '/course/$courseId'
       preLoaderRoute: typeof AuthenticatedCourseCourseIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manage-class/$classId': {
+      id: '/_authenticated/manage-class/$classId'
+      path: '/manage-class/$classId'
+      fullPath: '/manage-class/$classId'
+      preLoaderRoute: typeof AuthenticatedManageClassClassIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/quiz/$quizId': {
@@ -330,8 +330,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedMyCoursesRoute: typeof AuthenticatedMyCoursesRoute
   AuthenticatedUpgradeRoute: typeof AuthenticatedUpgradeRoute
-  AuthenticatedClassClassIdRoute: typeof AuthenticatedClassClassIdRoute
   AuthenticatedCourseCourseIdRoute: typeof AuthenticatedCourseCourseIdRoute
+  AuthenticatedManageClassClassIdRoute: typeof AuthenticatedManageClassClassIdRoute
   AuthenticatedQuizQuizIdRoute: typeof AuthenticatedQuizQuizIdRoute
 }
 
@@ -339,8 +339,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedMyCoursesRoute: AuthenticatedMyCoursesRoute,
   AuthenticatedUpgradeRoute: AuthenticatedUpgradeRoute,
-  AuthenticatedClassClassIdRoute: AuthenticatedClassClassIdRoute,
   AuthenticatedCourseCourseIdRoute: AuthenticatedCourseCourseIdRoute,
+  AuthenticatedManageClassClassIdRoute: AuthenticatedManageClassClassIdRoute,
   AuthenticatedQuizQuizIdRoute: AuthenticatedQuizQuizIdRoute,
 }
 

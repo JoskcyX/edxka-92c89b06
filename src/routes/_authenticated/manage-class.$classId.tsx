@@ -13,7 +13,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { endLiveClass, startLiveClass } from "@/lib/live.functions";
 import { LiveRoom } from "@/components/LiveRoom";
 
-export const Route = createFileRoute("/_authenticated/class/$classId")({
+export const Route = createFileRoute("/_authenticated/manage-class/$classId")({
   head: () => ({
     meta: [
       { title: "Class control room — EDxKa" },
