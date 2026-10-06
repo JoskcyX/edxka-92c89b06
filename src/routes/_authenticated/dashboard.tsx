@@ -225,7 +225,7 @@ function ClassesSection() {
     onSuccess: (d) => {
       setTitle("");
       queryClient.invalidateQueries({ queryKey: ["classes"] });
-      navigate({ to: "/class/$classId", params: { classId: d.id } });
+      navigate({ to: "/manage-class/$classId", params: { classId: d.id } });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create class"),
   });
@@ -251,7 +251,7 @@ function ClassesSection() {
       </form>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {classes.data?.map((c) => (
-          <Link key={c.id} to="/class/$classId" params={{ classId: c.id }} className="surface-card p-5 transition-transform hover:-translate-y-0.5">
+          <Link key={c.id} to="/manage-class/$classId" params={{ classId: c.id }} className="surface-card p-5 transition-transform hover:-translate-y-0.5">
             <p className="text-xl font-bold">{c.title}</p>
             <p className="text-sm text-muted-foreground">Code <span className="font-bold tracking-widest text-foreground">{c.join_code}</span></p>
           </Link>
