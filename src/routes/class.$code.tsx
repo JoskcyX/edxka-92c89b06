@@ -12,6 +12,7 @@ import { getClassVideoUrl } from "@/lib/class-videos.functions";
 import { getLiveStatus, joinLiveClass } from "@/lib/live.functions";
 import { LiveRoom } from "@/components/LiveRoom";
 import { embedUrl } from "@/lib/courses";
+import { PdfPage, isPdf } from "@/components/PdfPage";
 
 export const Route = createFileRoute("/class/$code")({
   head: () => ({
@@ -33,7 +34,7 @@ const schema = z.object({
 });
 
 type ClassInfo = { id: string; title: string; subject: string; description: string };
-type Resource = { id: string; title: string; kind: "link" | "note" | "video"; url: string | null; body: string };
+type Resource = { id: string; title: string; kind: "link" | "note" | "video" | "document"; url: string | null; body: string };
 type ClassQuiz = { quiz_id: string; title: string; join_code: string; mode: "pop" | "async"; pushed_at: string | null; quiz_status: string; opens_at: string | null; closes_at: string | null };
 
 function ClassPage() {
@@ -152,6 +153,7 @@ function ClassPage() {
       {memberId && status === "approved" && (
         <div className="mt-8 grid gap-8">
           {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} />}
+          <Presentation memberId={memberId} />
           {live && (
             <button onClick={joinLive} className="surface-card flex items-center justify-between gap-4 border-secondary bg-secondary p-6 text-left text-secondary-foreground">
               <div className="flex items-center gap-3"><Video className="size-6" /><div><p className="text-sm font-bold uppercase">Your class is live</p><p className="text-xl font-bold">Tap to join the video class</p></div></div>
@@ -199,7 +201,8 @@ function ClassPage() {
                     {r.title}
                   </p>
                   {r.url && r.kind === "video" && <VideoPlayer memberId={memberId} resourceId={r.id} url={r.url} />}
-                  {r.url && r.kind !== "video" && <a href={r.url} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm font-bold text-secondary underline">{r.url}</a>}
+                  {r.url && r.kind === "document" && <DocView memberId={memberId} resourceId={r.id} url={r.url} />}
+                  {r.url && r.kind === "link" && <a href={r.url} target="_blank" rel="noreferrer" className="mt-1 block break-all text-sm font-bold text-secondary underline">{r.url}</a>}
                   {r.body && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{r.body}</p>}
                 </div>
               ))}
@@ -208,6 +211,59 @@ function ClassPage() {
         </div>
       )}
     </Shell>
+  );
+}
+
+function useStoredUrl(memberId: string, resourceId: string | null) {
+  const fetchUrl = useServerFn(getClassVideoUrl);
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    setSrc(null);
+    if (!resourceId) return;
+    fetchUrl({ data: { memberId, resourceId } }).then((r) => setSrc(r.url)).catch(() => {});
+  }, [memberId, resourceId, fetchUrl]);
+  return src;
+}
+
+function DocView({ memberId, resourceId, url }: { memberId: string; resourceId: string; url: string }) {
+  const [open, setOpen] = useState(false);
+  const src = useStoredUrl(memberId, open ? resourceId : null);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  if (!open) return <Button size="sm" variant="outline" className="mt-2 rounded-full" onClick={() => setOpen(true)}>Open document</Button>;
+  if (!src) return <p className="mt-2 text-sm text-muted-foreground">Loading…</p>;
+  if (!isPdf(url)) return <a href={src} target="_blank" rel="noreferrer" className="mt-2 block text-sm font-bold text-secondary underline">Open file</a>;
+  return (
+    <div className="mt-2 grid gap-2">
+      <PdfPage src={src} page={page} onPageCount={setPages} />
+      <div className="flex items-center justify-center gap-2">
+        <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>Prev</Button>
+        <span className="text-sm font-bold">Page {page} / {pages || "…"}</span>
+        <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</Button>
+      </div>
+    </div>
+  );
+}
+
+// Follows whatever page the tutor is showing right now.
+function Presentation({ memberId }: { memberId: string }) {
+  const [cur, setCur] = useState<{ resource_id: string; title: string; page: number } | null>(null);
+  useEffect(() => {
+    const load = () => supabase.rpc("get_class_presentation", { _member_id: memberId }).then(({ data }) => {
+      const row = (data as { resource_id: string; title: string; page: number }[] | null)?.[0] ?? null;
+      setCur((p) => (p?.resource_id === row?.resource_id && p?.page === row?.page ? p : row));
+    });
+    load();
+    const t = setInterval(load, 2000);
+    return () => clearInterval(t);
+  }, [memberId]);
+  const src = useStoredUrl(memberId, cur?.resource_id ?? null);
+  if (!cur) return null;
+  return (
+    <section className="surface-card grid gap-2 border-primary p-4">
+      <p className="flex items-center gap-2 text-sm font-bold uppercase text-primary"><span className="pulse-dot size-2 rounded-full bg-primary" /> Follow along · {cur.title} · Page {cur.page}</p>
+      {src ? <PdfPage src={src} page={cur.page} /> : <p className="text-sm text-muted-foreground">Loading…</p>}
+    </section>
   );
 }
 
