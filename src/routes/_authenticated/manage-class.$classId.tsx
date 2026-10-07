@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Copy, Eye, Plus, Radio, Trash2, X } from "lucide-react";
 import { StudentPreview } from "@/components/StudentPreview";
+import { ClassMaterials } from "@/components/ClassMaterials";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,14 +50,6 @@ function ClassRoom() {
     refetchInterval: 4000,
     queryFn: async () => {
       const { data, error } = await supabase.from("class_members").select("*").eq("class_id", classId).order("joined_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
-  const resources = useQuery({
-    queryKey: ["class", classId, "resources"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("class_resources").select("*").eq("class_id", classId).order("order_index");
       if (error) throw error;
       return data;
     },
@@ -116,34 +109,6 @@ function ClassRoom() {
   });
   const delRoster = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("class_roster").delete().eq("id", id); if (error) throw error; },
-    onSuccess: inv,
-  });
-
-  const [rTitle, setRTitle] = useState("");
-  const [rKind, setRKind] = useState<"link" | "note" | "video">("link");
-  const [rUrl, setRUrl] = useState("");
-  const [rBody, setRBody] = useState("");
-  const [rFile, setRFile] = useState<File | null>(null);
-  const addResource = useMutation({
-    mutationFn: async () => {
-      let url = rUrl.trim() || null;
-      if (rKind === "video" && rFile) {
-        const path = `${classId}/${Date.now()}-${rFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        const { error: upErr } = await supabase.storage.from("class-videos").upload(path, rFile, { contentType: rFile.type });
-        if (upErr) throw upErr;
-        url = `storage:${path}`;
-      }
-      const { error } = await supabase.from("class_resources").insert({
-        class_id: classId, title: rTitle.trim(), kind: rKind, url, body: rBody.trim(),
-        order_index: resources.data?.length ?? 0,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => { setRTitle(""); setRUrl(""); setRBody(""); setRFile(null); inv(); toast.success("Resource added"); },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
-  });
-  const delResource = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("class_resources").delete().eq("id", id); if (error) throw error; },
     onSuccess: inv,
   });
 
@@ -216,7 +181,7 @@ function ClassRoom() {
 
   return (
     <div className="min-h-screen confetti-bg">
-      {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} leaveLabel="Minimise" />}
+      {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} leaveLabel="Close" />}
       <main className="mx-auto max-w-5xl px-6 py-8 pb-24">
         <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground"><ArrowLeft className="size-4" /> Dashboard</Link>
         <h1 className="mt-3 text-4xl font-bold">{cls.data.title}</h1>
@@ -364,26 +329,7 @@ function ClassRoom() {
               })}
             </div>
 
-            <h2 className="mt-8 text-2xl font-bold">Resources</h2>
-            <form onSubmit={(e) => { e.preventDefault(); if (!rTitle.trim()) { toast.error("Add a title"); return; } addResource.mutate(); }} className="surface-card mt-3 grid gap-2 p-4">
-              <div className="flex gap-2">
-                <Input value={rTitle} onChange={(e) => setRTitle(e.target.value)} placeholder="Title" />
-                <select value={rKind} onChange={(e) => setRKind(e.target.value as typeof rKind)} className="rounded-md border border-input bg-background px-2">
-                  <option value="link">Link</option><option value="video">Video</option><option value="note">Note</option>
-                </select>
-              </div>
-              {rKind !== "note" && <Input value={rUrl} onChange={(e) => setRUrl(e.target.value)} placeholder="https://…" />}
-              <Textarea value={rBody} onChange={(e) => setRBody(e.target.value)} placeholder="Notes (optional)" />
-              <Button disabled={addResource.isPending} className="rounded-full font-bold"><Plus className="size-4" /> Add resource</Button>
-            </form>
-            <div className="mt-3 grid gap-2">
-              {resources.data?.map((r) => (
-                <div key={r.id} className="surface-card flex items-center justify-between p-3">
-                  <p className="font-bold">{r.title} <span className="text-xs text-muted-foreground">({r.kind})</span></p>
-                  <Button size="sm" variant="ghost" onClick={() => delResource.mutate(r.id)}><Trash2 className="size-4" /></Button>
-                </div>
-              ))}
-            </div>
+            <ClassMaterials classId={classId} presentingId={cls.data.presenting_resource_id ?? null} presentingPage={cls.data.presenting_page ?? 1} />
           </section>
         </div>
       </main>
