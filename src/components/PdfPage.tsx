@@ -17,7 +17,7 @@ export function PdfPage({ src, page, onPageCount }: { src: string; page: number;
         const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
         pdfjs.GlobalWorkerOptions.workerSrc = worker;
         if (docRef.current?.src !== src) {
-          docRef.current = { src, doc: await pdfjs.getDocument(src).promise };
+          docRef.current = { src, doc: await pdfjs.getDocument({ url: src }).promise };
         }
         const doc = docRef.current.doc;
         onPageCount?.(doc.numPages);

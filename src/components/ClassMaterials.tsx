@@ -76,7 +76,7 @@ export function ClassMaterials({ classId, presentingId, presentingPage }: { clas
       if (file && (kind === "video" || kind === "document")) {
         if (file.size > 1024 * 1024 * 1024) throw new Error("File is over 1GB");
         const path = `${classId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-        const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type || undefined });
+        const { error } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type || "application/octet-stream" });
         if (error) throw error;
         u = `storage:${path}`;
       }
