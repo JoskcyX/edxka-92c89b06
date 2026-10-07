@@ -11,4 +11,4 @@
 - [ ] Walk through the full class flow in the preview (create → join → approve → push quiz).
 - [x] Tutors upload class videos from their device; approved students watch on EDxKa.
 - [x] Live video rooms (Daily.co): tutor start/end, approved students join.
-- [ ] Class materials: device video/doc upload, PDF page presenting with next/prev, show/hide per material, minimised live window, tutor view of shared materials.
+- [x] Class materials: device video/doc upload, PDF page presenting with next/prev, show/hide per material, minimised live window, tutor view of shared materials.
