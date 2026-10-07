@@ -4,8 +4,23 @@ import { Maximize2, Minimize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Starts as a small floating window so the class page stays usable; expand anytime.
-export function LiveRoom({ url, onLeave, leaveLabel = "Leave", startExpanded = false }: { url: string; onLeave: () => void; leaveLabel?: string; startExpanded?: boolean }) {
+// audioOnly keeps the room connected (tutor's voice) with the video hidden — used during pop quizzes.
+export function LiveRoom({ url, onLeave, leaveLabel = "Leave", startExpanded = false, audioOnly = false }: { url: string; onLeave: () => void; leaveLabel?: string; startExpanded?: boolean; audioOnly?: boolean }) {
   const [big, setBig] = useState(startExpanded);
+  if (audioOnly) {
+    return (
+      <>
+        <iframe src={url} title="Live class audio" allow="camera; microphone; autoplay" className="pointer-events-none fixed size-px opacity-0" aria-hidden />
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border-2 border-foreground bg-foreground px-4 py-2 shadow-2xl">
+          <span className="pulse-dot size-2 rounded-full bg-primary" />
+          <span className="text-sm font-bold text-background">Live class audio</span>
+          <Button size="sm" variant="secondary" onClick={onLeave} className="h-7 rounded-full px-2 font-bold" aria-label="Leave live class">
+            <X className="size-4" />
+          </Button>
+        </div>
+      </>
+    );
+  }
   return (
     <div
       className={cn(
