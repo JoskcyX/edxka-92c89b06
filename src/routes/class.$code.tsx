@@ -72,9 +72,17 @@ function ClassPage() {
     return () => { clearInterval(t); window.removeEventListener("pagehide", bye); beat(false); };
   }, [roomUrl, memberId]);
   const joinLive = async () => {
-    if (!memberId) return;
-    try { setRoomUrl((await joinFn({ data: { memberId } })).url); }
+    if (!memberId || !info) return;
+    try {
+      setRoomUrl((await joinFn({ data: { memberId } })).url);
+      // Remember the session so the quiz page can keep the tutor's audio playing.
+      localStorage.setItem("edxka_class_live", JSON.stringify({ classId: info.id, memberId }));
+    }
     catch { toast.error("Could not join the live class"); }
+  };
+  const leaveLive = () => {
+    setRoomUrl(null);
+    localStorage.removeItem("edxka_class_live");
   };
 
   const refresh = useCallback(async () => {
