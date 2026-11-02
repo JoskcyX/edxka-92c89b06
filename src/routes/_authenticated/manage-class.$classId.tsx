@@ -2,16 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Copy, Eye, Plus, Radio, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, DoorOpen, Eye, Radio, Trash2, X } from "lucide-react";
 import { StudentPreview } from "@/components/StudentPreview";
 import { ClassMaterials } from "@/components/ClassMaterials";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { endLiveClass, startLiveClass } from "@/lib/live.functions";
+import { allowEveryone, endLiveClass, setJoinWindow, startLiveClass } from "@/lib/live.functions";
 import { LiveRoom } from "@/components/LiveRoom";
 
 export const Route = createFileRoute("/_authenticated/manage-class/$classId")({
@@ -87,29 +86,20 @@ function ClassRoom() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
-  const roster = useQuery({
-    queryKey: ["class", classId, "roster"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("class_roster").select("*").eq("class_id", classId).order("created_at");
-      if (error) throw error;
-      return data;
-    },
-  });
-  const [rosterText, setRosterText] = useState("");
-  const [rosterOn, setRosterOn] = useState(false);
-  const addRoster = useMutation({
-    mutationFn: async () => {
-      const rows = [...new Set(rosterText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))].slice(0, 1000)
-        .map((identifier) => ({ class_id: classId, identifier: identifier.slice(0, 120) }));
-      const { error } = await supabase.from("class_roster").upsert(rows, { onConflict: "class_id,identifier", ignoreDuplicates: true });
-      if (error) throw error;
-    },
-    onSuccess: () => { setRosterText(""); inv(); toast.success("List saved"); },
+  const allowAllFn = useServerFn(allowEveryone);
+  const doorFn = useServerFn(setJoinWindow);
+  const allowAll = useMutation({
+    mutationFn: () => allowAllFn({ data: { classId } }),
+    onSuccess: (r) => { inv(); toast.success(r.count === 1 ? "Let 1 student in" : `Let ${r.count} students in`); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
-  const delRoster = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("class_roster").delete().eq("id", id); if (error) throw error; },
-    onSuccess: inv,
+  const setDoor = useMutation({
+    mutationFn: (minutes: number) => doorFn({ data: { classId, minutes } }),
+    onSuccess: (r) => {
+      inv();
+      toast.success(r.until ? `Open door on — anyone who requests joins instantly until ${new Date(r.until).toLocaleTimeString()}` : "Open door closed");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
   const [pick, setPick] = useState("");
