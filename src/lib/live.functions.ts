@@ -103,3 +103,34 @@ export const joinLiveClass = createServerFn({ method: "POST" })
     if (!c?.live_room_name || !c.live_room_url) throw new Error("Class isn't live");
     return { url: `${c.live_room_url}?t=${await token(c.live_room_name, m.name, false)}` };
   });
+
+// One tap from inside the live window: approve everyone waiting in the join lobby.
+export const allowEveryone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(classInput)
+  .handler(async ({ data, context }) => {
+    const { data: cls } = await context.supabase.from("classes").select("id, tutor_id").eq("id", data.classId).maybeSingle();
+    if (!cls || cls.tutor_id !== context.userId) throw new Error("Not your class");
+    const { data: rows, error } = await context.supabase
+      .from("class_members")
+      .update({ status: "approved" })
+      .eq("class_id", cls.id)
+      .eq("status", "pending")
+      .select("id");
+    if (error) throw error;
+    return { count: rows?.length ?? 0 };
+  });
+
+// Open door: for the next N minutes anyone who requests to join gets in instantly.
+// request_class_join checks auto_approve_until, so the tutor never leaves the live class.
+export const setJoinWindow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ classId: z.string().uuid(), minutes: z.number().int().min(0).max(480) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: cls } = await context.supabase.from("classes").select("id, tutor_id").eq("id", data.classId).maybeSingle();
+    if (!cls || cls.tutor_id !== context.userId) throw new Error("Not your class");
+    const until = data.minutes > 0 ? new Date(Date.now() + data.minutes * 60_000).toISOString() : null;
+    const { error } = await context.supabase.from("classes").update({ auto_approve_until: until }).eq("id", cls.id);
+    if (error) throw error;
+    return { until };
+  });

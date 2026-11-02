@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.class_roster IS 'DEPRECATED: expected-students list retired; attendance is tracked on class_members'
