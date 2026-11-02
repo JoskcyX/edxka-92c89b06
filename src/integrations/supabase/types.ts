@@ -217,6 +217,7 @@ export type Database = {
       }
       classes: {
         Row: {
+          auto_approve_until: string | null
           created_at: string
           description: string
           id: string
@@ -231,6 +232,7 @@ export type Database = {
           tutor_id: string
         }
         Insert: {
+          auto_approve_until?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -245,6 +247,7 @@ export type Database = {
           tutor_id: string
         }
         Update: {
+          auto_approve_until?: string | null
           created_at?: string
           description?: string
           id?: string
