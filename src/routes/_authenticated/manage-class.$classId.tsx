@@ -199,7 +199,19 @@ function ClassRoom() {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <section>
-            <h2 className="text-2xl font-bold">Join requests ({pending.length})</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-2xl font-bold">Join requests ({pending.length})</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                {doorOpen && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
+                    <DoorOpen className="size-3.5" /> Open door until {doorUntil!.toLocaleTimeString()}
+                  </span>
+                )}
+                {pending.length > 0 && (
+                  <Button size="sm" disabled={allowAll.isPending} onClick={() => allowAll.mutate()} className="rounded-full font-bold">Let everyone in</Button>
+                )}
+              </div>
+            </div>
             <div className="mt-3 grid gap-2">
               {pending.length === 0 && <p className="text-sm text-muted-foreground">No pending requests.</p>}
               {pending.map((m) => (
