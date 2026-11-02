@@ -246,52 +246,6 @@ function ClassRoom() {
               })}
             </div>
 
-            <div className="surface-card mt-8 flex items-center justify-between gap-3 p-4">
-              <div>
-                <h2 className="text-xl font-bold">Expected students</h2>
-                <p className="text-sm text-muted-foreground">Track attendance against your own list of names, matric numbers or phone numbers.</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={rosterOn}
-                onClick={() => setRosterOn((v) => !v)}
-                className={`relative h-8 w-14 shrink-0 rounded-full border-2 transition-colors ${rosterOn ? "border-secondary bg-secondary" : "border-border bg-muted"}`}
-              >
-                <span className={`absolute top-0.5 size-6 rounded-full bg-card shadow transition-all ${rosterOn ? "left-6" : "left-0.5"}`} />
-              </button>
-            </div>
-            {(rosterOn || (roster.data?.length ?? 0) > 0) && (<>
-            <p className="mt-4 text-sm text-muted-foreground">Paste names, matric numbers or phone numbers — one per line. They're ticked off as students come into the live class.</p>
-            <div className="surface-card mt-3 grid gap-2 p-4">
-              <Textarea value={rosterText} onChange={(e) => setRosterText(e.target.value)} placeholder={"Ada Obi\nMAT/2024/001\n08012345678"} rows={4} />
-              <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" disabled={!rosterText.trim() || addRoster.isPending} onClick={() => addRoster.mutate()} className="rounded-full font-bold"><Plus className="size-4" /> Add to list</Button>
-                <label className="cursor-pointer text-sm font-bold text-primary underline">
-                  Upload .txt / .csv
-                  <input type="file" accept=".txt,.csv" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setRosterText((await f.text()).split(/[\r\n]+/).map((l) => l.split(",")[0]).join("\n")); }} />
-                </label>
-              </div>
-            </div>
-            {(roster.data?.length ?? 0) > 0 && (
-              <div className="mt-3 grid gap-1">
-                <p className="text-sm font-bold">{roster.data!.filter((r) => rosterStatus(r.identifier) === "present").length} of {roster.data!.length} present</p>
-                {roster.data!.map((r) => {
-                  const st = rosterStatus(r.identifier);
-                  return (
-                    <div key={r.id} className="surface-card flex items-center justify-between px-3 py-2 text-sm">
-                      <span className="flex items-center gap-2">
-                        <span className={`size-2.5 rounded-full ${st === "present" ? "bg-secondary" : st === "left" ? "bg-primary" : "bg-muted-foreground/40"}`} />
-                        <span className="font-bold">{r.identifier}</span>
-                        <span className="text-muted-foreground">{st === "present" ? "Present" : st === "left" ? "Left" : st === "joined" ? "In class, not live" : "Absent"}</span>
-                      </span>
-                      <button aria-label="Remove from list" onClick={() => delRoster.mutate(r.id)} className="text-muted-foreground hover:text-destructive"><X className="size-4" /></button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            </>)}
           </section>
 
           <section>
