@@ -81,11 +81,11 @@ function WaitingPanel({
   onAllowOne,
   onDenyOne,
 }: {
-  waiting?: WaitingStudent[];
-  onAllowAll?: () => void;
-  onAllowWindow?: (minutes: number) => void;
-  onAllowOne?: (id: string) => void;
-  onDenyOne?: (id: string) => void;
+  waiting?: WaitingStudent[] | undefined;
+  onAllowAll?: (() => void) | undefined;
+  onAllowWindow?: ((minutes: number) => void) | undefined;
+  onAllowOne?: ((id: string) => void) | undefined;
+  onDenyOne?: ((id: string) => void) | undefined;
 }) {
   if (!waiting || waiting.length === 0) return null;
   return (
