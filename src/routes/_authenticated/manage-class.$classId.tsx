@@ -159,19 +159,24 @@ function ClassRoom() {
   const approved = members.data?.filter((m) => m.status === "approved") ?? [];
   const isLive = (m: { last_seen_at: string | null; left_at: string | null }) =>
     !!m.last_seen_at && !m.left_at && Date.now() - new Date(m.last_seen_at).getTime() < 45000;
-  const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const rosterStatus = (id: string) => {
-    const k = norm(id);
-    const m = approved.find((x) => norm(x.name) === k || norm(x.phone) === k || (k.length >= 3 && norm(x.name).includes(k)));
-    if (!m) return "absent";
-    if (isLive(m)) return "present";
-    if (m.left_at) return "left";
-    return "joined";
-  };
+
+  const doorUntil = cls.data.auto_approve_until ? new Date(cls.data.auto_approve_until) : null;
+  const doorOpen = !!doorUntil && doorUntil.getTime() > Date.now();
 
   return (
     <div className="min-h-screen confetti-bg">
-      {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} leaveLabel="Close" />}
+      {roomUrl && (
+        <LiveRoom
+          url={roomUrl}
+          onLeave={() => setRoomUrl(null)}
+          leaveLabel="Close"
+          waiting={pending.map((m) => ({ id: m.id, name: m.name, phone: m.phone }))}
+          onAllowAll={() => allowAll.mutate()}
+          onAllowWindow={(mins) => setDoor.mutate(mins)}
+          onAllowOne={(id) => setStatus.mutate({ id, status: "approved" })}
+          onDenyOne={(id) => setStatus.mutate({ id, status: "rejected" })}
+        />
+      )}
       <main className="mx-auto max-w-5xl px-6 py-8 pb-24">
         <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm font-bold text-muted-foreground"><ArrowLeft className="size-4" /> Dashboard</Link>
         <h1 className="mt-3 text-4xl font-bold">{cls.data.title}</h1>
