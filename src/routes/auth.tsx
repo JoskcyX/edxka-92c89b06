@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -85,6 +86,25 @@ function AuthPage() {
       });
       if (error) throw error;
       toast.success("Confirmation email sent again.");
+    } catch (error) {
+      toast.error(friendlyError(error));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setBusy(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.redirected) return;
+      if (result.error) {
+        toast.error(friendlyError(result.error));
+        return;
+      }
+      navigate({ to: "/dashboard", replace: true });
     } catch (error) {
       toast.error(friendlyError(error));
     } finally {
