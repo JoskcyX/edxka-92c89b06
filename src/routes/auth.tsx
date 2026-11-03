@@ -298,7 +298,7 @@ function AuthPage() {
               type="button"
               onClick={handleGoogle}
               disabled={busy}
-              className="chunky mt-4 flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-surface font-bold text-ink ring-1 ring-border transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+              className="chunky mt-4 flex h-12 w-full items-center justify-center gap-3 rounded-xl border-2 border-border bg-card font-bold text-card-foreground transition-transform hover:-translate-y-0.5 disabled:opacity-60"
             >
               <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#EA4335" d="M12 5.04c1.62 0 3.06.56 4.2 1.64l3.12-3.12C17.46 1.8 14.96.72 12 .72 7.44.72 3.56 3.36 1.72 7.28l3.66 2.84C6.24 7.16 8.88 5.04 12 5.04z" />
