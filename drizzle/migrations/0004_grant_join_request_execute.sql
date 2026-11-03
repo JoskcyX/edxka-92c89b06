@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.request_class_join(uuid, text, text) TO anon, authenticated;
