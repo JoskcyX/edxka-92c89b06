@@ -12,4 +12,4 @@
 - [x] Tutors upload class videos from their device; approved students watch on EDxKa.
 - [x] Live video rooms (Daily.co): tutor start/end, approved students join.
 - [x] Class materials: device video/doc upload, PDF page presenting with next/prev, show/hide per material, minimised live window, tutor view of shared materials.
-- [ ] Export the tutor's users list as a downloadable CSV.
+- [x] Export the tutor's users list as a downloadable CSV.
