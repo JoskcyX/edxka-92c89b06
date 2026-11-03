@@ -287,6 +287,30 @@ function AuthPage() {
           </Button>
         </form>
 
+        {mode !== "forgot" && (
+          <>
+            <div className="mt-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">or</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={busy}
+              className="chunky mt-4 flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-surface font-bold text-ink ring-1 ring-border transition-transform hover:-translate-y-0.5 disabled:opacity-60"
+            >
+              <svg className="size-5" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#EA4335" d="M12 5.04c1.62 0 3.06.56 4.2 1.64l3.12-3.12C17.46 1.8 14.96.72 12 .72 7.44.72 3.56 3.36 1.72 7.28l3.66 2.84C6.24 7.16 8.88 5.04 12 5.04z" />
+                <path fill="#4285F4" d="M23.28 12.26c0-.78-.06-1.5-.2-2.26H12v4.28h6.32c-.28 1.46-1.1 2.7-2.34 3.54l3.62 2.8c2.12-1.96 3.68-4.84 3.68-8.36z" />
+                <path fill="#FBBC05" d="M5.4 14.28a7.2 7.2 0 0 1 0-4.56L1.72 6.88a11.28 11.28 0 0 0 0 10.24l3.66-2.84z" />
+                <path fill="#34A853" d="M12 23.28c3.04 0 5.6-1 7.46-2.72l-3.62-2.8c-1 .68-2.28 1.08-3.84 1.08-3.12 0-5.76-2.12-6.62-5.04l-3.66 2.84c1.84 3.92 5.72 6.64 10.28 6.64z" />
+              </svg>
+              {busy ? "Please wait…" : "Continue with Google"}
+            </button>
+          </>
+        )}
+
         {mode === "signin" && (
           <button
             type="button"
