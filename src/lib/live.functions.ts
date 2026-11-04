@@ -11,7 +11,7 @@ const TTL_SECONDS = 60 * 60 * 6;
 
 function b64url(input: Uint8Array): string {
   let s = "";
-  for (let i = 0; i < input.length; i++) s += String.fromCharCode(input[i]);
+  for (const byte of input) s += String.fromCharCode(byte);
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
