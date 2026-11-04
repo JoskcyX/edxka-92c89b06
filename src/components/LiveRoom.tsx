@@ -3,7 +3,6 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Check, Maximize2, Minimize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LiveKitRoomView } from "@/components/LiveKitRoomView.types";
 
 // Starts as a small floating window so the class page stays usable; expand anytime.
 // The video itself is a LiveKit room, loaded lazily in the browser only.
