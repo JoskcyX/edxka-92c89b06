@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
+import { ClientOnly } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Check, Maximize2, Minimize2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Starts as a small floating window so the class page stays usable; expand anytime.
+// The video itself is a LiveKit room, loaded lazily in the browser only.
 // audioOnly keeps the room connected (tutor's voice) with the video hidden — used during pop quizzes.
 // waiting shows students sitting in the join lobby as a banner inside the live window,
 // so the tutor can let them in without leaving the class.
 export type WaitingStudent = { id: string; name: string; phone: string };
 
+const RoomView = lazy(() => import("@/components/LiveKitRoomView"));
+
 export function LiveRoom({
-  url,
+  serverUrl,
+  token,
   onLeave,
   leaveLabel = "Leave",
   startExpanded = false,
@@ -21,7 +26,8 @@ export function LiveRoom({
   onAllowOne,
   onDenyOne,
 }: {
-  url: string;
+  serverUrl: string;
+  token: string;
   onLeave: () => void;
   leaveLabel?: string;
   startExpanded?: boolean;
@@ -33,10 +39,17 @@ export function LiveRoom({
   onDenyOne?: (id: string) => void;
 }) {
   const [big, setBig] = useState(startExpanded);
+  const room = (
+    <ClientOnly fallback={<div className="grid h-full place-items-center text-sm text-background/70">Connecting…</div>}>
+      <Suspense fallback={<div className="grid h-full place-items-center text-sm text-background/70">Connecting…</div>}>
+        <RoomView serverUrl={serverUrl} token={token} audioOnly={audioOnly} />
+      </Suspense>
+    </ClientOnly>
+  );
   if (audioOnly) {
     return (
       <>
-        <iframe src={url} title="Live class audio" allow="camera; microphone; autoplay" className="pointer-events-none fixed size-px opacity-0" aria-hidden />
+        <div className="size-px overflow-hidden opacity-0" aria-hidden>{room}</div>
         <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border-2 border-foreground bg-foreground px-4 py-2 shadow-2xl">
           <span className="pulse-dot size-2 rounded-full bg-primary" />
           <span className="text-sm font-bold text-background">Live class audio</span>
@@ -69,7 +82,7 @@ export function LiveRoom({
         </div>
       </div>
       {panel}
-      <iframe src={url} title="Live class" allow="camera; microphone; fullscreen; display-capture; autoplay" className="w-full flex-1 border-0" />
+      <div className="min-h-0 flex-1">{room}</div>
     </div>
   );
 }

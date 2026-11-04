@@ -139,15 +139,15 @@ function ClassRoom() {
 
   const startFn = useServerFn(startLiveClass);
   const endFn = useServerFn(endLiveClass);
-  const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const [room, setRoom] = useState<{ serverUrl: string; token: string } | null>(null);
   const goLive = useMutation({
     mutationFn: () => startFn({ data: { classId } }),
-    onSuccess: (r) => { setRoomUrl(r.url); inv(); },
+    onSuccess: (r) => { setRoom(r); inv(); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not start"),
   });
   const endLive = useMutation({
     mutationFn: () => endFn({ data: { classId } }),
-    onSuccess: () => { setRoomUrl(null); inv(); toast.success("Class ended"); },
+    onSuccess: () => { setRoom(null); inv(); toast.success("Class ended"); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not end"),
   });
 
@@ -165,10 +165,11 @@ function ClassRoom() {
 
   return (
     <div className="min-h-screen confetti-bg">
-      {roomUrl && (
+      {room && (
         <LiveRoom
-          url={roomUrl}
-          onLeave={() => setRoomUrl(null)}
+          serverUrl={room.serverUrl}
+          token={room.token}
+          onLeave={() => setRoom(null)}
           leaveLabel="Close"
           waiting={pending.map((m) => ({ id: m.id, name: m.name, phone: m.phone }))}
           onAllowAll={() => allowAll.mutate()}

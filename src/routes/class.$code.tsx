@@ -61,27 +61,27 @@ function ClassPage() {
   const liveFn = useServerFn(getLiveStatus);
   const joinFn = useServerFn(joinLiveClass);
   const [live, setLive] = useState(false);
-  const [roomUrl, setRoomUrl] = useState<string | null>(null);
+  const [room, setRoom] = useState<{ serverUrl: string; token: string } | null>(null);
   useEffect(() => {
-    if (!roomUrl || !memberId) return;
+    if (!room || !memberId) return;
     const beat = (present: boolean) => { supabase.rpc("live_heartbeat", { _member_id: memberId, _present: present }).then(() => {}); };
     beat(true);
     const t = setInterval(() => beat(true), 15000);
     const bye = () => beat(false);
     window.addEventListener("pagehide", bye);
     return () => { clearInterval(t); window.removeEventListener("pagehide", bye); beat(false); };
-  }, [roomUrl, memberId]);
+  }, [room, memberId]);
   const joinLive = async () => {
     if (!memberId || !info) return;
     try {
-      setRoomUrl((await joinFn({ data: { memberId } })).url);
+      setRoom(await joinFn({ data: { memberId } }));
       // Remember the session so the quiz page can keep the tutor's audio playing.
       localStorage.setItem("edxka_class_live", JSON.stringify({ classId: info.id, memberId }));
     }
     catch { toast.error("Could not join the live class"); }
   };
   const leaveLive = () => {
-    setRoomUrl(null);
+    setRoom(null);
     localStorage.removeItem("edxka_class_live");
   };
 
@@ -160,7 +160,7 @@ function ClassPage() {
 
       {memberId && status === "approved" && (
         <div className="mt-8 grid gap-8">
-          {roomUrl && <LiveRoom url={roomUrl} onLeave={() => setRoomUrl(null)} />}
+          {room && <LiveRoom serverUrl={room.serverUrl} token={room.token} onLeave={() => setRoom(null)} />}
           <Presentation memberId={memberId} />
           {live && (
             <button onClick={joinLive} className="surface-card flex items-center justify-between gap-4 border-secondary bg-secondary p-6 text-left text-secondary-foreground">

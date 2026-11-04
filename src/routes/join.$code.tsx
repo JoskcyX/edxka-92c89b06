@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { formatMs, MEDAL, toOptions, type BoardRow, type PlayableQuestion } from "@/lib/quiz";
+import { useServerFn } from "@tanstack/react-start";
+import { joinLiveClass } from "@/lib/live.functions";
+import { LiveRoom } from "@/components/LiveRoom";
 
 export const Route = createFileRoute("/join/$code")({
   ssr: false,
@@ -299,6 +302,23 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
   const lastSkip = useRef<number>(quiz.skip_signal);
   const lastExtend = useRef<number>(quiz.extend_signal);
   const locked = useRef(false);
+
+  // While the tutor is teaching live, keep the class audio running behind the quiz.
+  const joinClassLive = useServerFn(joinLiveClass);
+  const [classRoom, setClassRoom] = useState<{ serverUrl: string; token: string } | null>(null);
+  useEffect(() => {
+    const saved = localStorage.getItem("edxka_class_live");
+    if (!saved) return;
+    try {
+      const { memberId } = JSON.parse(saved) as { memberId: string };
+      if (!memberId) return;
+      let cancelled = false;
+      joinClassLive({ data: { memberId } }).then((r) => { if (!cancelled) setClassRoom(r); }).catch(() => {});
+      return () => { cancelled = true; };
+    } catch {
+      return;
+    }
+  }, [joinClassLive]);
 
   useEffect(() => {
     supabase.rpc("get_quiz_questions", { _quiz_id: quiz.id }).then(({ data }) => {
@@ -595,6 +615,14 @@ function Play({ quiz, participantId }: { quiz: Quiz; participantId: string }) {
             </>
           )}
 
+        {classRoom && (
+          <LiveRoom
+            serverUrl={classRoom.serverUrl}
+            token={classRoom.token}
+            audioOnly
+            onLeave={() => { setClassRoom(null); localStorage.removeItem("edxka_class_live"); }}
+          />
+        )}
         </div>
       </div>
     </div>
