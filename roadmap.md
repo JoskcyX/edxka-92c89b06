@@ -1,5 +1,7 @@
 # EDxKa Roadmap
 
+- [ ] Fix LiveKit rooms to publish camera and microphone on connect; verify the live preview.
+
 - [ ] Fix signup referral-code failure and unreadable errors; verify without sending test emails.
 
 - [ ] Finish Tutor Pro limits and referral dashboard wiring.

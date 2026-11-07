@@ -15,7 +15,7 @@ export default function LiveKitRoomView({
   if (audioOnly) {
     return (
       <div className="hidden" aria-hidden>
-        <LiveKitRoom serverUrl={serverUrl} token={token}>
+        <LiveKitRoom serverUrl={serverUrl} token={token} audio video={false}>
           <RoomAudioRenderer />
         </LiveKitRoom>
       </div>
@@ -23,7 +23,7 @@ export default function LiveKitRoomView({
   }
   return (
     <div className="h-full w-full">
-      <LiveKitRoom serverUrl={serverUrl} token={token} className="h-full w-full">
+      <LiveKitRoom serverUrl={serverUrl} token={token} audio video className="h-full w-full">
         <VideoConference />
         <RoomAudioRenderer />
       </LiveKitRoom>
